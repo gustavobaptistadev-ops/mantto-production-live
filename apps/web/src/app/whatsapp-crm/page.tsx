@@ -363,14 +363,47 @@ export default function WhatsAppCRMPage() {
                 ))}
               </div>
 
+              {/* Arsenal de Negociação Rápida do Vendedor (Top 10 Toolkit) */}
+              <div className="px-3 py-2 bg-slate-900/90 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold no-scrollbar">
+                <span className="text-slate-500 uppercase tracking-wider text-[9px] font-bold px-1">Negociação:</span>
+                <button
+                  type="button"
+                  onClick={() => setChatInput("🎉 Boas notícias! Consegui liberar um cupom exclusivo de 5% de desconto especial para sua primeira compra agora!")}
+                  className="px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-800/60 text-sky-300 hover:bg-sky-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
+                >
+                  <span>🏷️</span> Cupom 1ª Compra (-5%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatInput("🔥 Vi que seu pedido ficou pendente. Consegui autorização da gerência para 10% de desconto imediato se fecharmos hoje via PIX!")}
+                  className="px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-800/60 text-amber-300 hover:bg-amber-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
+                >
+                  <span>⚡</span> Resgate Carrinho (-10%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatInput("✨ Quer ver como essa peça veste no seu corpo antes de finalizar? Envie uma foto sua de frente que nosso Provador Virtual por IA veste a roupa em você em segundos!")}
+                  className="px-2.5 py-1 rounded-lg bg-fuchsia-950/60 border border-fuchsia-800/60 text-fuchsia-300 hover:bg-fuchsia-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
+                >
+                  <span>🧥</span> Ofertar Provador VTON
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatInput("💳 Aqui está sua chave PIX Copia-e-Cola para pagamento instantâneo com confirmação em tempo real e separação imediata do pedido!")}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 hover:bg-emerald-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
+                >
+                  <span>💎</span> Chave PIX Rápida
+                </button>
+              </div>
+
               {/* Campo de Envio de Mensagem */}
               <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900 flex gap-2">
                 <input
                   type="text"
                   placeholder={
                     selectedLead.needs_human_intervention
-                      ? "Digite sua mensagem como vendedor..."
-                      : "Assuma o atendimento para responder manualmente..."
+                      ? "Digite sua mensagem ou clique num gatilho rápido acima..."
+                      : "Assuma o atendimento acima para responder ou usar os atalhos..."
                   }
                   disabled={!selectedLead.needs_human_intervention}
                   value={chatInput}
