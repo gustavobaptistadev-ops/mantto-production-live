@@ -64,9 +64,15 @@ async def whatsapp_webhook(payload: dict, request: Request, db: AsyncSession = D
         ai_req = ChatRequest(message=text_body, conversation_history=history, context=agent_context)
         ai_resp = await chat_with_agent(ai_req, db)
         
-        # 3. Send back to WhatsApp (mocked - here we just return the reply)
-        # In a real app we would call the WhatsApp Graph API to send the message
-        return {"status": "ok", "reply_sent": ai_resp.reply}
+        # 3. Disparo ativo para a Meta WhatsApp Cloud API
+        from mantto_api.modules.whatsapp.client import whatsapp_client
+        send_result = await whatsapp_client.send_text_message(to_number=from_number, text=ai_resp.reply)
+        
+        return {
+            "status": "ok", 
+            "reply_sent": ai_resp.reply,
+            "delivery": send_result
+        }
         
     except Exception as e:
         return {"status": "error", "detail": str(e)}
