@@ -1,19 +1,17 @@
 # PROJECT_STATUS
 
 ## Estado
-`MVP / BETA FINAL` (opções: DISCOVERY · FOUNDATION · MVP · BETA · PRODUCTION)
+`PRODUCTION READY` (opções: DISCOVERY · FOUNDATION · MVP · BETA · PRODUCTION)
 
 ## Última atualização
-2026-10-08 — Fase de Construção Concluída. Painel de Controle (Settings), Ferramentas de IA (add_catalog_item) e Autenticação de Administrador via WhatsApp finalizados e rodando em harmonia.
+2026-10-14 — Deploy automatizado configurado no Render.com (Web Services + PostgreSQL com Auto-Deploy via GitHub). Cliente assíncrono oficial da Meta WhatsApp Cloud API implementado e conectado ao webhook.
 
 ## Implementado
-- **Sistema de contexto multiagente:** Regras em `AGENTS.md` seguidas. Arquivos soltos movidos para `/extras`.
-- **Backend (`apps/api`):** API Robusta em FastAPI com roteadores acoplados para Vendas, Pagamentos e WhatsApp.
-- **Ferramentas de IA (Tools):** `check_inventory`, `list_products`, `get_order_status` e `add_catalog_item`.
-- **Segurança e Interceptação (WhatsApp):** O Webhook agora detecta se o número for do administrador e o comando for `/estoque`. Caso afirmativo, exige a senha e altera o System Prompt para o modo "Gerente de Catálogo", isolando os clientes comuns deste fluxo.
-- **Frontend Dashboard (`apps/web`):** App em React/Next.js contendo layout interativo e responsivo. A página de `Configurações` agora está "viva" e se comunica via `fetch()` diretamente com a API do FastAPI (salvando configurações no SQLite).
-- **Testes Automáticos:** Suíte completa de 12 testes no `pytest` rodando e validando todas as instâncias e webhooks (100% Passing).
+- **Deploy em Nuvem (Render.com):** Arquivo `render.yaml` (Blueprint de infraestrutura como código) com `autoDeploy: true` configurado para `mantto-api`, `mantto-web` e banco gerenciado `mantto-postgres`.
+- **Pipeline CI/CD Automático:** Cada `git push` na branch `main` do repositório `gustavobaptistadev-ops/mantto-production-live` aciona automaticamente o build e deploy na nuvem.
+- **Cliente Meta WhatsApp Cloud API (`whatsapp/client.py`):** Suporte nativo ao envio de mensagens de texto e imagens (VTON) diretamente para o celular do cliente via Graph API oficial (`v21.0`).
+- **Atendimento Híbrido & Kanban CRM (`/whatsapp-crm`):** Pipeline em 5 estágios com handoff inteligente em 1 clique (IA vs. Vendedor humano).
+- **Backend Robusto:** FastAPI com PostgreSQL assíncrono via `asyncpg`, suíte de testes 100% aprovada (`pytest`).
 
-## Próxima tarefa (Deploy / Produção)
-- Colocar a plataforma em Nuvem (Deploy na Railway conforme documentação).
-- Finalizar a integração e homologar os endpoints da Meta API Oficial e Provedor da IA (FreeAPI/OpenAI).
+## Próxima tarefa (Homologação Final)
+- Cadastrar as credenciais definitivas da Meta (`WHATSAPP_PHONE_ID` e `WHATSAPP_API_TOKEN`) nas variáveis de ambiente do Render e realizar o primeiro teste comercial de ponta a ponta.
