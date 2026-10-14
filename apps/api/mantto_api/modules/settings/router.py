@@ -15,7 +15,8 @@ class SettingsUpdate(BaseModel):
     llm_model: str | None = None
     llm_temperature: float | None = None
     negotiation_margin: int | None = None
-    system_prompt: str | None = None
+    first_attempt_discount: int | None = None
+    cart_rescue_discount: int | None = None
     system_prompt: str | None = None
     tone_of_voice: str | None = None
     blacklist_words: str | None = None
