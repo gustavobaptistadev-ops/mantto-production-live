@@ -1,7 +1,7 @@
 services:
   # 1. Backend FastAPI (Plano Gratuito)
   - type: web
-    name: mantto-api
+    name: mantto-commerce-api
     runtime: python
     rootDir: apps/api
     buildCommand: "pip install -r requirements.txt && alembic upgrade head"
@@ -28,7 +28,7 @@ services:
 
   # 2. Frontend Next.js (Static/Web Service Gratuito)
   - type: web
-    name: mantto-web
+    name: mantto-commerce-web
     runtime: node
     rootDir: apps/web
     buildCommand: "npm install && npm run build"
@@ -41,7 +41,7 @@ services:
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
-          name: mantto-api
+          name: mantto-commerce-api
           property: host
 
 databases:
