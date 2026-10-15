@@ -18,3 +18,17 @@ Regras obrigatórias para IAs do produto (runtime) e para IAs de desenvolvimento
 - Nunca assuma que código de outra IA está correto.
 - Não sobrescreva código que contradiz a doc: registre divergência em ADR.
 - Selecione contexto mínimo relevante à tarefa (context budget).
+
+## Protocolo de Economia Cirúrgica de Tokens & Anti-Loop (Engenharia de Prompt)
+1. **Zero Tentativa-e-Erro Cego (Anti-Loop):**
+   - Nunca execute comandos repetitivos na esperança de um resultado diferente.
+   - Se um comando ou teste falhar, pare imediatamente, leia a causa raiz exata e execute a correção de forma cirúrgica em um único passo.
+2. **Budget Rígido de Contexto (Token Saving):**
+   - Não leia arquivos completos quando um intervalo de linhas (`StartLine`/`EndLine`) for suficiente.
+   - Jamais traga diretórios inteiros de dependências (`node_modules`, `.venv`, `.next`, `build`) para o contexto.
+3. **Respostas e Ações Ultra-Objetivas:**
+   - Evite preâmbulos desnecessários ou explicações redundantes de código não modificado.
+   - Entregue o código pronto, testado e os fatos objetivos.
+4. **Verificação Prévia de Estado:**
+   - Sempre consulte o estado real do ambiente antes de disparar múltiplos builds ou requisições em cascata.
+
