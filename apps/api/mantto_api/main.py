@@ -1,4 +1,4 @@
-﻿"""Entrypoint da API."""
+"""Entrypoint da API."""
 
 from collections.abc import Awaitable, Callable
 
@@ -41,6 +41,13 @@ def create_app(readiness_checks: dict[str, ReadinessCheck] | None = None) -> Fas
     @app.get("/metrics")
     async def metrics() -> Response:
         return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+    @app.get("/logs")
+    async def get_logs(limit: int = 100) -> dict:
+        """Retorna os logs originais e estruturados do sistema em tempo real."""
+        from mantto_api.observability import get_system_logs
+        return {"total": len(get_system_logs(limit)), "logs": get_system_logs(limit)}
+
 
     from mantto_api.modules.auth.router import router as auth_router
     from mantto_api.modules.orders.router import router as orders_router

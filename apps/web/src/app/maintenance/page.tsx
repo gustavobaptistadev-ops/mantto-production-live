@@ -19,6 +19,30 @@ export default function MaintenancePage() {
   const [resetting, setResetting] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
 
+  // Estado para Stream de Logs Originais do Sistema
+  const [systemLogs, setSystemLogs] = useState<any[]>([]);
+
+  const fetchLogs = async () => {
+    try {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/logs?limit=50`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.logs) {
+          setSystemLogs(data.logs);
+        }
+      }
+    } catch (e) {
+      console.log("Aviso: Polling de logs aguardando conexão.");
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Carregar configurações existentes
   useEffect(() => {
     const apiUrl = getApiUrl();
@@ -315,6 +339,54 @@ export default function MaintenancePage() {
                 </ul>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Seção 3: Terminal de Logs Originais do Sistema em Tempo Real */}
+        <div className="mt-10 bg-black/80 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+              </div>
+              <h2 className="text-sm font-bold text-slate-200 font-mono tracking-tight flex items-center gap-2">
+                <span>📟</span> Terminal de Logs do Sistema (Stream Original Sem Resumo)
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Ao Vivo (4s polling)
+              </span>
+              <button
+                type="button"
+                onClick={fetchLogs}
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-mono transition-colors"
+              >
+                Atualizar Agora
+              </button>
+            </div>
+          </div>
+
+          <div className="h-80 overflow-y-auto font-mono text-xs bg-slate-950/90 rounded-xl p-4 space-y-2 border border-slate-900 shadow-inner no-scrollbar">
+            {systemLogs.length === 0 ? (
+              <div className="text-slate-600 italic py-8 text-center">Nenhum evento registrado ainda. Navegue pelo painel para gerar logs...</div>
+            ) : (
+              systemLogs.map((log, index) => (
+                <div key={index} className="text-slate-300 hover:bg-slate-900/60 p-1.5 rounded transition-colors flex gap-3 items-start border-b border-slate-900/40">
+                  <span className="text-slate-500 select-none whitespace-nowrap text-[11px]">{log.timestamp || "—"}</span>
+                  <span className="text-cyan-400 font-bold uppercase text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 whitespace-nowrap">
+                    {log.event || "LOG"}
+                  </span>
+                  <pre className="text-emerald-400/90 flex-1 whitespace-pre-wrap break-all text-[11px]">
+                    {JSON.stringify(log, null, 2)}
+                  </pre>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </main>

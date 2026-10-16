@@ -14,10 +14,21 @@ LATENCY = Histogram("http_request_duration_seconds", "HTTP latency", ["method", 
 
 logger = logging.getLogger("mantto.api")
 
+# Buffer de logs originais em memória (últimos 150 eventos do sistema)
+LOG_BUFFER: list[dict] = []
+
+def get_system_logs(limit: int = 100) -> list[dict]:
+    """Retorna os logs originais mais recentes do sistema."""
+    return LOG_BUFFER[-limit:]
 
 def log_event(event: str, **fields: object) -> None:
     """Log JSON estruturado. Nunca passe segredos ou dados pessoais em fields."""
-    logger.info(json.dumps({"event": event, **fields}, default=str))
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    entry = {"timestamp": timestamp, "event": event, **fields}
+    LOG_BUFFER.append(entry)
+    if len(LOG_BUFFER) > 300:
+        LOG_BUFFER.pop(0)
+    logger.info(json.dumps(entry, default=str))
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
