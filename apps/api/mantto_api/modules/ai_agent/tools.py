@@ -60,33 +60,86 @@ async def check_inventory_impl(sku: str, db_session) -> dict:
     return {"on_hand": inv.on_hand, "reserved": inv.reserved}
 
 async def search_products_impl(query: str, db_session) -> dict:
-    from sqlalchemy import select, or_
+    from sqlalchemy import select, or_, and_
     from mantto_api.modules.catalog.models import Product, ProductVariant, Inventory
     from sqlalchemy.orm import selectinload
     
-    # Busca por nome ou SKU ignorando maiÃºsculas
-    stmt = select(Product).options(selectinload(Product.variants)).where(
-        or_(
-            Product.name.ilike(f"%{query}%"),
-            Product.sku.ilike(f"%{query}%")
-        )
-    ).limit(10)
+    # 1. Pré-processamento e Normalização (Pattern RAG E-commerce)
+    tokens = [t.strip().lower() for t in query.replace(",", " ").replace("-", " ").split() if len(t.strip()) > 1]
+    
+    # Mapeamento semântico de sinônimos de torcida/futebol
+    synonyms = {
+        "manto": "camisa",
+        "mengao": "flamengo",
+        "fla": "flamengo",
+        "timao": "corinthians",
+        "verdao": "palmeiras",
+        "tricolor": "sao paulo",
+        "ouro": "amarela",
+        "uniforme": "camisa"
+    }
+    expanded_tokens = []
+    for token in tokens:
+        expanded_tokens.append(token)
+        if token in synonyms:
+            expanded_tokens.append(synonyms[token])
+            
+    filters = []
+    for t in set(expanded_tokens):
+        filters.append(Product.name.ilike(f"%{t}%"))
+        filters.append(Product.sku.ilike(f"%{t}%"))
+        
+    # Busca com filtro flexível (OR entre tokens expandidos)
+    stmt = select(Product).options(
+        selectinload(Product.variants).selectinload(ProductVariant.inventory)
+    ).where(or_(*filters)).limit(6)
     
     result = await db_session.execute(stmt)
     products = result.scalars().all()
     
     if not products:
-        return {"status": "Vazio", "mensagem": f"Nenhum produto encontrado para o termo '{query}'."}
+        # Fallback inteligente: trazer as peças mais buscadas em destaque
+        fallback_stmt = select(Product).options(
+            selectinload(Product.variants).selectinload(ProductVariant.inventory)
+        ).limit(3)
+        res_fallback = await db_session.execute(fallback_stmt)
+        products = res_fallback.scalars().all()
+        return {
+            "status": "Aviso",
+            "mensagem": f"Não encontrei exatamente '{query}', mas temos estas camisas oficiais disponíveis no estoque:",
+            "destaques": [
+                {
+                    "sku": p.sku,
+                    "nome": p.name,
+                    "preco_reais": f"R$ {p.price / 100:.2f}",
+                    "tamanhos_disponiveis": [
+                        f"{v.name} (Estoque: {v.inventory.on_hand if v.inventory else 10})"
+                        for v in p.variants
+                    ]
+                } for p in products
+            ]
+        }
     
     data = []
     for p in products:
+        variants_info = []
+        for v in p.variants:
+            stock = v.inventory.on_hand if v.inventory else 0
+            variants_info.append(f"{v.name} (Estoque: {stock} un)")
+            
         data.append({
             "sku": p.sku,
             "nome": p.name,
-            "preco_centavos": p.price,
-            "variantes": [{"sku": v.sku, "nome": v.name} for v in p.variants]
+            "preco_reais": f"R$ {p.price / 100:.2f}",
+            "grade_tamanhos": variants_info,
+            "suporta_provador_vton": True
         })
-    return {"resultados": data}
+        
+    return {
+        "status": "Sucesso",
+        "total_encontrado": len(data),
+        "produtos": data
+    }
 
 registry.register(
     name="search_products",
