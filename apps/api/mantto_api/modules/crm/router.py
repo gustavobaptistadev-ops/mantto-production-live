@@ -81,3 +81,70 @@ async def move_lead_stage(payload: MoveStageRequest, db: AsyncSession = Depends(
     lead.last_interaction = datetime.utcnow()
     await db.commit()
     return {"status": "ok", "new_stage": lead.stage}
+
+class ResetConversationRequest(BaseModel):
+    whatsapp_number: str
+
+@router.post("/reset-conversation")
+async def reset_conversation(payload: ResetConversationRequest, db: AsyncSession = Depends(get_db_session)):
+    """Zera o histórico de conversas e reseta a sessão do lead no banco de dados."""
+    from mantto_api.modules.crm.models import ChatMessage
+    from sqlalchemy import delete
+    
+    clean_number = "".join(filter(str.isdigit, payload.whatsapp_number))
+    
+    # 1. Apaga todas as mensagens salvas daquele número
+    await db.execute(
+        delete(ChatMessage).where(
+            (ChatMessage.whatsapp_number == payload.whatsapp_number) | 
+            (ChatMessage.whatsapp_number == clean_number)
+        )
+    )
+    
+    # 2. Reseta o LeadSession para o estágio NOVO e devolve para IA
+    result = await db.execute(
+        select(LeadSession).where(
+            (LeadSession.whatsapp_number == payload.whatsapp_number) | 
+            (LeadSession.whatsapp_number == clean_number)
+        )
+    )
+    lead = result.scalars().first()
+    if lead:
+        lead.stage = "NOVO"
+        lead.needs_human_intervention = False
+        lead.total_value_cents = 0
+        lead.sentiment = "NEUTRO"
+        lead.last_interaction = datetime.utcnow()
+        
+    await db.commit()
+    return {
+        "status": "ok",
+        "message": f"Conversas e sessão do WhatsApp {payload.whatsapp_number} foram totalmente zeradas com sucesso!"
+    }
+
+@router.get("/conversations/{whatsapp_number}")
+async def get_lead_conversation(whatsapp_number: str, db: AsyncSession = Depends(get_db_session)):
+    """Retorna as mensagens salvas no banco de dados para o número especificado."""
+    from mantto_api.modules.crm.models import ChatMessage
+    clean_number = "".join(filter(str.isdigit, whatsapp_number))
+    
+    stmt = (
+        select(ChatMessage)
+        .where((ChatMessage.whatsapp_number == whatsapp_number) | (ChatMessage.whatsapp_number == clean_number))
+        .order_by(ChatMessage.created_at.asc())
+    )
+    res = await db.execute(stmt)
+    msgs = res.scalars().all()
+    
+    return {
+        "whatsapp_number": whatsapp_number,
+        "total_messages": len(msgs),
+        "messages": [
+            {
+                "id": str(m.id),
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at.isoformat() if m.created_at else None
+            } for m in msgs
+        ]
+    }

@@ -23,3 +23,11 @@ class SystemSettings(Base):
     store_name: Mapped[str] = mapped_column(String(100), nullable=True, default="Mantto")
     pix_key: Mapped[str] = mapped_column(String(100), nullable=True, default="")
     pix_beneficiary: Mapped[str] = mapped_column(String(100), nullable=True, default="")
+    
+    # Configurações de WhatsApp (Oficial Meta vs Gateway QR OpenWA/Evolution)
+    whatsapp_provider: Mapped[str] = mapped_column(String(50), nullable=True, default="meta_cloud") # "meta_cloud" ou "qr_gateway"
+    whatsapp_phone_id: Mapped[str] = mapped_column(String(100), nullable=True, default="")
+    whatsapp_api_token: Mapped[str] = mapped_column(String(255), nullable=True, default="")
+    whatsapp_gateway_url: Mapped[str] = mapped_column(String(255), nullable=True, default="")
+    whatsapp_gateway_token: Mapped[str] = mapped_column(String(255), nullable=True, default="")
+    whatsapp_gateway_instance: Mapped[str] = mapped_column(String(100), nullable=True, default="mantto-instance")

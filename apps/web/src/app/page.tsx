@@ -34,6 +34,7 @@ export default function DashboardPage() {
             <a href="/whatsapp-crm" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">WhatsApp CRM</a>
             <a href="/orders" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Pedidos</a>
             <a href="/settings" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Configurações & Sliders</a>
+            <a href="/maintenance" className="px-4 py-3 text-amber-400 hover:text-white rounded-lg">🛠️ Manutenção</a>
           </nav>
         </div>
       )}
@@ -64,6 +65,9 @@ export default function DashboardPage() {
           </a>
           <a href="/settings" className="flex items-center px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 rounded-xl transition-all">
             <span className="font-medium text-sm">⚙️ Sliders & Regras</span>
+          </a>
+          <a href="/maintenance" className="flex items-center px-4 py-3 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-xl transition-all border border-amber-500/20">
+            <span className="font-medium text-sm">🛠️ Manutenção</span>
           </a>
         </nav>
       </aside>

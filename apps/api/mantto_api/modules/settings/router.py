@@ -23,6 +23,12 @@ class SettingsUpdate(BaseModel):
     store_name: str | None = None
     pix_key: str | None = None
     pix_beneficiary: str | None = None
+    whatsapp_provider: str | None = None
+    whatsapp_phone_id: str | None = None
+    whatsapp_api_token: str | None = None
+    whatsapp_gateway_url: str | None = None
+    whatsapp_gateway_token: str | None = None
+    whatsapp_gateway_instance: str | None = None
 
 @router.get("/")
 async def get_settings(db: AsyncSession = Depends(get_db_session)):
