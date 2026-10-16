@@ -22,3 +22,14 @@ class LeadSession(Base, UUIDMixin, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<LeadSession {self.whatsapp_number} - {self.stage}>"
+
+class ChatMessage(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "chat_messages"
+
+    whatsapp_number: Mapped[str] = mapped_column(String(50), index=True)
+    role: Mapped[str] = mapped_column(String(20)) # "user", "assistant", "system"
+    content: Mapped[str] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<ChatMessage {self.whatsapp_number} [{self.role}]: {self.content[:30]}>"

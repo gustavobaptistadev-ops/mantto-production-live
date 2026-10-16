@@ -54,17 +54,39 @@ async def whatsapp_webhook(payload: dict, request: Request, db: AsyncSession = D
         sys_prompt = domain_context["sys_prompt"]
         is_admin = domain_context["is_admin"]
             
-        # 1. Fetch conversation history from cache/db based on from_number (skipped in MVP mock)
+        # 1. Fetch conversation history from db based on from_number (Memória Conversacional Contínua)
+        from mantto_api.modules.crm.models import ChatMessage
+        from sqlalchemy import select
+        
+        hist_stmt = (
+            select(ChatMessage)
+            .where(ChatMessage.whatsapp_number == from_number)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(10)
+        )
+        res_hist = await db.execute(hist_stmt)
+        past_messages = list(reversed(res_hist.scalars().all()))
+        
         history = [
-            {"role": "system", "content": f"{sys_prompt} O número atual é {from_number}."}
+            {"role": "system", "content": f"{sys_prompt} O número do cliente atual é {from_number}."}
         ]
+        for past_msg in past_messages:
+            history.append({
+                "role": past_msg.role,
+                "content": past_msg.content
+            })
         
         # 2. Call AI Agent (with Context Injection for RBAC)
         agent_context = {"is_admin": is_admin}
         ai_req = ChatRequest(message=text_body, conversation_history=history, context=agent_context)
         ai_resp = await chat_with_agent(ai_req, db)
         
-        # 3. Disparo ativo para a Meta WhatsApp Cloud API
+        # 3. Persistir histórico na base para futuras interações (Memória Permanente)
+        db.add(ChatMessage(whatsapp_number=from_number, role="user", content=text_body))
+        db.add(ChatMessage(whatsapp_number=from_number, role="assistant", content=ai_resp.reply))
+        await db.commit()
+        
+        # 4. Disparo ativo para a Meta WhatsApp Cloud API
         from mantto_api.modules.whatsapp.client import whatsapp_client
         send_result = await whatsapp_client.send_text_message(to_number=from_number, text=ai_resp.reply)
         
