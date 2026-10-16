@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getApiUrl } from "@/lib/apiConfig";
 
 interface Lead {
   id: string;
@@ -37,7 +38,8 @@ export default function WhatsAppCRMPage() {
   // Carregar dados reais do backend
   const fetchPipeline = async () => {
     try {
-      const res = await fetch("http://localhost:8000/crm/pipeline");
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/crm/pipeline`);
       if (res.ok) {
         const data = await res.json();
         setPipeline(data.pipeline);
@@ -57,7 +59,8 @@ export default function WhatsAppCRMPage() {
   const handleToggleHandoff = async (lead: Lead) => {
     const nextState = !lead.needs_human_intervention;
     try {
-      const res = await fetch("http://localhost:8000/crm/handoff", {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/crm/handoff`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,7 +82,8 @@ export default function WhatsAppCRMPage() {
   // Mover lead de coluna no Kanban
   const handleMoveStage = async (lead: Lead, newStage: string) => {
     try {
-      const res = await fetch("http://localhost:8000/crm/move-stage", {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/crm/move-stage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

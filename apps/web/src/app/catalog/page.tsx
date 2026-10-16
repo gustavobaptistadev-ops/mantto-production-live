@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { getApiUrl } from "@/lib/apiConfig";
 
 export default function CatalogPage() {
   const [activeTab, setActiveTab] = useState('provador'); // Inicia no provador como foco atual
@@ -23,7 +24,8 @@ export default function CatalogPage() {
     setVtonResult(null);
 
     try {
-      const response = await fetch("http://localhost:8000/vton/generate", {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/vton/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

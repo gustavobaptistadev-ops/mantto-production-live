@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getApiUrl } from "@/lib/apiConfig";
 
 interface SettingsData {
   llm_base_url: string;
@@ -38,7 +39,8 @@ export default function SettingsPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:8000/settings/")
+    const apiUrl = getApiUrl();
+    fetch(`${apiUrl}/settings/`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
@@ -61,7 +63,8 @@ export default function SettingsPage() {
     setSavedSuccess(false);
 
     try {
-      const res = await fetch("http://localhost:8000/settings/", {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/settings/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
