@@ -98,6 +98,9 @@ export default function SettingsPage() {
             <Link href="/catalog" className="text-slate-400 hover:text-white transition-colors">Catálogo & VTON</Link>
             <Link href="/whatsapp-crm" className="text-slate-400 hover:text-white transition-colors">WhatsApp & Kanban</Link>
             <Link href="/settings" className="text-cyan-400 border-b-2 border-cyan-400 pb-1 font-semibold">Motor IA & Config</Link>
+            <Link href="/maintenance" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-medium">
+              <span>🛠️</span> Manutenção
+            </Link>
           </nav>
         </div>
 

@@ -19,6 +19,11 @@ export default function MaintenancePage() {
   const [resetting, setResetting] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
 
+  // Estados dos Controles de Liga/Desliga da IA (Chaveamento Executivo)
+  const [aiAutonomousSales, setAiAutonomousSales] = useState(true);
+  const [vtonTryonActive, setVtonTryonActive] = useState(true);
+  const [autoDiscountActive, setAutoDiscountActive] = useState(true);
+
   // Estado para Stream de Logs Originais do Sistema
   const [systemLogs, setSystemLogs] = useState<any[]>([]);
 
@@ -163,8 +168,71 @@ export default function MaintenancePage() {
             <span>🛠️</span> Manutenção do Sistema & Canais WhatsApp
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Gerencie instâncias de conexão, chaveie entre API Oficial e Gateways QR, e efetue resets cirúrgicos de banco de dados.
+            Gerencie instâncias de conexão, chaveie entre API Oficial e Gateways QR, e controle em tempo real as capacidades autônomas da IA.
           </p>
+        </div>
+
+        {/* Chaveamento Executivo de Recursos da IA (Liga/Desliga em Tempo Real) */}
+        <div className="mb-8 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>🎛️</span> Chaveamento Executivo de Recursos da IA
+              </h2>
+              <p className="text-xs text-slate-400">Ative ou pause módulos em tempo real sem reiniciar os servidores.</p>
+            </div>
+            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Hot-Reloading Ativo
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Toggle 1: Vendas Autônomas */}
+            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${aiAutonomousSales ? 'bg-cyan-950/30 border-cyan-500/40' : 'bg-slate-800/30 border-slate-700/50 opacity-60'}`}>
+              <div>
+                <span className="text-xs font-bold text-slate-200 block">🤖 Vendas 100% Autônomas</span>
+                <span className="text-[11px] text-slate-400">Atendimento e carrinho via WhatsApp</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiAutonomousSales(!aiAutonomousSales)}
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${aiAutonomousSales ? 'bg-cyan-500 justify-end' : 'bg-slate-700 justify-start'}`}
+              >
+                <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+              </button>
+            </div>
+
+            {/* Toggle 2: Provador Virtual VTON */}
+            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${vtonTryonActive ? 'bg-fuchsia-950/30 border-fuchsia-500/40' : 'bg-slate-800/30 border-slate-700/50 opacity-60'}`}>
+              <div>
+                <span className="text-xs font-bold text-slate-200 block">✨ Provador Virtual (VTON)</span>
+                <span className="text-[11px] text-slate-400">Gerar montagem de camisa no cliente</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVtonTryonActive(!vtonTryonActive)}
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${vtonTryonActive ? 'bg-fuchsia-500 justify-end' : 'bg-slate-700 justify-start'}`}
+              >
+                <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+              </button>
+            </div>
+
+            {/* Toggle 3: Cupons Automáticos */}
+            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${autoDiscountActive ? 'bg-amber-950/30 border-amber-500/40' : 'bg-slate-800/30 border-slate-700/50 opacity-60'}`}>
+              <div>
+                <span className="text-xs font-bold text-slate-200 block">🏷️ Cupom de 1ª Compra Auto</span>
+                <span className="text-[11px] text-slate-400">IA oferece 5% no primeiro atrito</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAutoDiscountActive(!autoDiscountActive)}
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${autoDiscountActive ? 'bg-amber-500 justify-end' : 'bg-slate-700 justify-start'}`}
+              >
+                <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

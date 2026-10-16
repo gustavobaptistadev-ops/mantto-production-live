@@ -58,7 +58,11 @@ export default function CatalogPage() {
         </div>
         <Link href="/" className="text-slate-400 hover:text-white transition-colors pb-1">Dashboard</Link>
         <Link href="/catalog" className="text-cyan-400 font-medium border-b-2 border-cyan-400 pb-1">Catálogo & VTON</Link>
+        <Link href="/whatsapp-crm" className="text-slate-400 hover:text-white transition-colors pb-1">WhatsApp & Kanban</Link>
         <Link href="/settings" className="text-slate-400 hover:text-white transition-colors pb-1">Motor IA & Config</Link>
+        <Link href="/maintenance" className="text-amber-400 hover:text-amber-300 transition-colors pb-1 flex items-center gap-1 font-medium">
+          <span>🛠️</span> Manutenção
+        </Link>
       </nav>
 
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">

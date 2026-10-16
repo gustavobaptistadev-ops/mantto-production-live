@@ -28,12 +28,11 @@ export default function DashboardPage() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-[65px] left-0 w-full h-[calc(100vh-65px)] bg-slate-900/95 backdrop-blur-md z-40 p-4 border-b border-slate-800">
           <nav className="flex flex-col space-y-2">
-            <a href="#" className="px-4 py-3 bg-slate-800 text-cyan-400 rounded-lg font-medium">Dashboard</a>
             <a href="/" className="px-4 py-3 bg-slate-800 text-cyan-400 rounded-lg font-medium">Dashboard</a>
             <a href="/catalog" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Catálogo & VTON</a>
             <a href="/whatsapp-crm" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">WhatsApp CRM</a>
-            <a href="/orders" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Pedidos</a>
-            <a href="/settings" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Configurações & Sliders</a>
+            <a href="/orders" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Pedidos & PIX</a>
+            <a href="/settings" className="px-4 py-3 text-slate-400 hover:text-white rounded-lg">Motor IA & Sliders</a>
             <a href="/maintenance" className="px-4 py-3 text-amber-400 hover:text-white rounded-lg">🛠️ Manutenção</a>
           </nav>
         </div>
@@ -80,30 +79,33 @@ export default function DashboardPage() {
         <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 relative z-10">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Painel Executivo da Loja</h2>
-            <p className="text-sm md:text-base text-slate-400 mt-1">Monitoramento em tempo real das vendas de camisas e provador virtual.</p>
+            <p className="text-sm md:text-base text-slate-400 mt-1">Supervisão estratégica de vendas autônomas, telemetria da IA e fechamento de pedidos.</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold flex items-center">
+            <span className="px-3.5 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold flex items-center shadow-[0_0_15px_rgba(16,185,129,0.15)]">
               <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-              WhatsApp Cloud API Online
+              WhatsApp Cloud & Motor IA Online
             </span>
           </div>
         </header>
 
-        {/* Métricas (KPIs) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8 relative z-10">
+        {/* Métricas de Poder Executivo do Administrador (KPIs de Alta Performance) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8 relative z-10">
           {[
-            { label: "Atendimentos de Camisas (Hoje)", value: "342", trend: "+12%", color: "text-cyan-400" },
-            { label: "Camisas Vendidas", value: "85 un", trend: "+18%", color: "text-emerald-400" },
-            { label: "Provadores VTON Gerados", value: "128", trend: "+34%", color: "text-fuchsia-400" },
-            { label: "Ticket Médio", value: "R$ 189,90", trend: "+8%", color: "text-blue-400" },
+            { label: "Vendas Autônomas (IA)", value: "R$ 16.141", sub: "85 pedidos fechados", trend: "+24%", color: "text-emerald-400" },
+            { label: "Tempo Médio Resposta", value: "1.4s", sub: "Humano: 14min", trend: "99.8% veloz", color: "text-cyan-400" },
+            { label: "Conversas Ativas Hoje", value: "342", sub: "48 simultâneas", trend: "+12%", color: "text-blue-400" },
+            { label: "Provadores VTON Gerados", value: "128", sub: "38.2% conversão", trend: "+34%", color: "text-fuchsia-400" },
+            { label: "Recuperação de Carrinho", value: "R$ 3.840", sub: "21 carrinhos salvos", trend: "+19%", color: "text-amber-400" },
+            { label: "Ticket Médio", value: "R$ 189,90", sub: "1.8 camisas/pedido", trend: "+8%", color: "text-indigo-400" },
           ].map((kpi, idx) => (
-            <div key={idx} className="p-5 md:p-6 bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl hover:border-slate-600 transition-colors shadow-sm">
-              <h3 className="text-slate-400 text-xs md:text-sm font-medium mb-2">{kpi.label}</h3>
-              <div className="flex items-end justify-between">
-                <span className={`text-2xl md:text-3xl font-bold ${kpi.color}`}>{kpi.value}</span>
-                <span className="text-emerald-400 text-xs md:text-sm font-semibold mb-1">{kpi.trend}</span>
+            <div key={idx} className="p-4 md:p-5 bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl hover:border-slate-600 transition-all shadow-sm">
+              <h3 className="text-slate-400 text-xs font-medium mb-1.5 line-clamp-1">{kpi.label}</h3>
+              <div className="flex items-baseline justify-between">
+                <span className={`text-xl md:text-2xl font-black ${kpi.color}`}>{kpi.value}</span>
+                <span className="text-emerald-400 text-[11px] font-semibold">{kpi.trend}</span>
               </div>
+              <p className="text-[11px] text-slate-500 mt-1">{kpi.sub}</p>
             </div>
           ))}
         </div>
