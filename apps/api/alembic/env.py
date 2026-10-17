@@ -73,6 +73,8 @@ def run_migrations_online() -> None:
     # Overwrite the alembic.ini URL with the app's config
     url = settings.database_url
     url = url.replace("+aiosqlite", "").replace("+asyncpg", "+psycopg2")
+    if url.startswith("postgresql://") and "+psycopg2" not in url:
+        url = url.replace("postgresql://", "postgresql+psycopg2://")
     config.set_main_option("sqlalchemy.url", url)
     
     connectable = engine_from_config(
