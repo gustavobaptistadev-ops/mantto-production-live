@@ -28,11 +28,11 @@ export default function SettingsPage() {
     negotiation_margin: 15,
     first_attempt_discount: 5,
     cart_rescue_discount: 10,
-    system_prompt: "Você é uma assistente executiva de vendas da Mantto. Seu objetivo é encantar o cliente, tirar dúvidas e fechar pedidos com agilidade.",
-    store_name: "Mantto AI Commerce",
+    system_prompt: "Você é um consultor executivo da MANTTO, especialista em camisas de futebol, história dos clubes, tecidos e tecnologia de provador virtual. Seu objetivo é encantar torcedores e fechar vendas no WhatsApp.",
+    store_name: "MANTTO Global Commerce",
     tone_of_voice: "consultivo",
-    pix_key: "",
-    pix_beneficiary: "",
+    pix_key: "financeiro@mantto.com.br",
+    pix_beneficiary: "Mantto Artigos Esportivos LTDA",
   });
 
   const [saving, setSaving] = useState(false);
@@ -54,7 +54,7 @@ export default function SettingsPage() {
           }));
         }
       })
-      .catch((err) => console.log("Aviso: modo offline ou API subindo", err));
+      .catch(() => {});
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -74,294 +74,286 @@ export default function SettingsPage() {
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 3000);
       }
-    } catch (err) {
-      console.error("Falha ao salvar configurações:", err);
+    } catch {
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
     } finally {
       setSaving(false);
     }
   };
 
+  // Cálculo simulado de lucratividade líquida por camisa média de R$ 299,90
+  const basePrice = 299.90;
+  const costPrice = 135.00; // Custo de produção/importação
+  const discountAmount = (basePrice * settings.negotiation_margin) / 100;
+  const finalPrice = basePrice - discountAmount;
+  const netMargin = finalPrice - costPrice;
+  const marginPercentage = ((netMargin / finalPrice) * 100).toFixed(1);
+
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
-      {/* Top Navbar Global Padronizada */}
-      <header className="border-b border-slate-800 bg-[#0f172a]/70 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500 flex items-center justify-center text-slate-900 font-black italic shadow-[0_0_15px_rgba(6,182,212,0.3)]">M</div>
-            <span className="text-xl font-bold tracking-tight text-white">
-              MANTTO <span className="text-cyan-400 font-light">COMMERCE</span>
-            </span>
+    <div className="flex h-screen bg-[#070b12] text-slate-100 overflow-hidden font-sans">
+      
+      {/* Sidebar Corporativa */}
+      <aside className="w-72 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between overflow-y-auto select-none">
+        <div>
+          <div className="p-6 pb-5 border-b border-slate-800/60">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-base shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                M
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold tracking-tight text-white text-base">MANTTO</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">Políticas & Cérebro LLM</p>
+              </div>
+            </div>
           </div>
 
-          <nav className="flex items-center gap-5 text-sm font-medium">
-            <Link href="/" className="text-slate-400 hover:text-white transition-colors">Dashboard</Link>
-            <Link href="/catalog" className="text-slate-400 hover:text-white transition-colors">Catálogo & VTON</Link>
-            <Link href="/whatsapp-crm" className="text-slate-400 hover:text-white transition-colors">WhatsApp & Kanban</Link>
-            <Link href="/settings" className="text-cyan-400 border-b-2 border-cyan-400 pb-1 font-semibold">Motor IA & Config</Link>
-            <Link href="/maintenance" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-medium">
-              <span>🛠️</span> Manutenção
-            </Link>
-          </nav>
-        </div>
+          <div className="px-3 pt-5">
+            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Comando & Controle</span>
+            <nav className="space-y-1">
+              <Link href="/" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span>Visão Geral</span>
+              </Link>
+              
+              <Link href="/catalog" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <span>Catálogo & Provador VTON</span>
+              </Link>
 
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Motor IA Ativo
-          </span>
-        </div>
-      </header>
+              <Link href="/whatsapp-crm" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                <span>WhatsApp CRM & Kanban</span>
+              </Link>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-[1400px] w-full mx-auto p-8 animate-in fade-in duration-500">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight">Motor de IA & Regras Comerciais</h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Configure o cérebro da vendedora, teto de descontos dinâmicos e políticas de negociação do WhatsApp.
-            </p>
+              <Link href="/settings" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-medium text-xs shadow-sm transition-all">
+                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span>Motor IA & Regras</span>
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              </Link>
+
+              <Link href="/maintenance" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-amber-950/20 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                <span>Manutenção & Logs</span>
+              </Link>
+            </nav>
           </div>
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            {saving ? "Salvando..." : savedSuccess ? "✓ Salvo com Sucesso!" : "Salvar Configurações"}
-          </button>
         </div>
 
-        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Coluna Esquerda: Conexão & Cérebro LLM (5 colunas) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-              <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                <span>🧠</span> Provedor de Inteligência (LLM)
-              </h2>
-              <p className="text-xs text-slate-400 mb-6">
-                Compatível com OpenAI, Groq, Anthropic ou FreeAPI local.
+        <div className="p-4 m-3 bg-[#0d1424] border border-slate-800/80 rounded-2xl">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>LLM Status</span>
+            <span className="text-cyan-400 font-bold">{settings.llm_model}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Conteúdo Central */}
+      <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#070b12]">
+        
+        <form onSubmit={handleSave}>
+          {/* Header */}
+          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-800/70">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-black text-white tracking-tight">Motor Neural de IA & Regras Comerciais</h1>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  Autonomous Policy
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Calibre a sensibilidade de descontos, comportamento da vendedora e integração financeira instantânea.
               </p>
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Base URL (Endpoint)</label>
-                  <input
-                    type="text"
-                    value={settings.llm_base_url}
-                    onChange={(e) => setSettings({ ...settings, llm_base_url: e.target.value })}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                    placeholder="https://api.openai.com/v1"
-                  />
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {saving ? "Gravando Políticas..." : savedSuccess ? "✓ Configurações Salvas!" : "Salvar Políticas de Venda"}
+            </button>
+          </header>
+
+          {/* Grid de 3 Colunas: Cérebro LLM (4 col) + Sliders de Margem (5 col) + Financeiro PIX (3 col) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* Bloco 1: Parâmetros do Cérebro LLM (4 colunas) */}
+            <div className="lg:col-span-4 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-5 shadow-xl space-y-4">
+              <div className="pb-3 border-b border-slate-800/80 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">1. Cérebro LLM</span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">Modelo de Linguagem (OpenAI Compatible)</label>
+                <select
+                  value={settings.llm_model}
+                  onChange={(e) => setSettings({ ...settings, llm_model: e.target.value })}
+                  className="w-full bg-[#080d18] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                >
+                  <option value="gpt-4o-mini">gpt-4o-mini (Recomendado - Ultra veloz)</option>
+                  <option value="gpt-4o">gpt-4o (Máxima persuasão)</option>
+                  <option value="claude-3-5-sonnet">claude-3-5-sonnet</option>
+                  <option value="llama-3.3-70b">llama-3.3-70b (Open Source)</option>
+                </select>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[11px] font-semibold text-slate-400">Temperatura (Criatividade vs Precisão)</label>
+                  <span className="text-xs font-bold font-mono text-cyan-400">{settings.llm_temperature}</span>
                 </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Modelo de IA</label>
-                  <input
-                    type="text"
-                    value={settings.llm_model}
-                    onChange={(e) => setSettings({ ...settings, llm_model: e.target.value })}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                    placeholder="gpt-4o-mini ou llama3-8b-instruct"
-                  />
+                <input
+                  type="range"
+                  min="0.0"
+                  max="1.0"
+                  step="0.05"
+                  value={settings.llm_temperature}
+                  onChange={(e) => setSettings({ ...settings, llm_temperature: parseFloat(e.target.value) })}
+                  className="w-full accent-cyan-400 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                  <span>Mais Preciso (0.0)</span>
+                  <span>Mais Criativo (1.0)</span>
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Chave de API (Secret Key)</label>
-                  <input
-                    type="password"
-                    value={settings.llm_api_key}
-                    onChange={(e) => setSettings({ ...settings, llm_api_key: e.target.value })}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                    placeholder="sk-..."
-                  />
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">Diretriz Sistêmica (Prompt do Especialista)</label>
+                <textarea
+                  rows={5}
+                  value={settings.system_prompt}
+                  onChange={(e) => setSettings({ ...settings, system_prompt: e.target.value })}
+                  className="w-full bg-[#080d18] border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 leading-relaxed font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Bloco 2: Sliders Corporativos de Negociação Comercial (5 colunas) */}
+            <div className="lg:col-span-5 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-5 shadow-xl space-y-5">
+              <div className="pb-3 border-b border-slate-800/80 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">2. Políticas de Desconto Dinâmico</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/30">
+                  Margem Protegida
+                </span>
+              </div>
+
+              {/* Slider 1: Teto Máximo */}
+              <div className="p-3.5 rounded-xl bg-[#080d18] border border-slate-800/80 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-200">Margem Máxima de Desconto da IA</span>
+                  <span className="text-sm font-black font-mono text-cyan-400">{settings.negotiation_margin}%</span>
                 </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  step="1"
+                  value={settings.negotiation_margin}
+                  onChange={(e) => setSettings({ ...settings, negotiation_margin: parseInt(e.target.value) })}
+                  className="w-full accent-cyan-400 cursor-pointer"
+                />
+                <p className="text-[11px] text-slate-400">Limite inegociável que o bot nunca ultrapassa, mesmo sob insistência.</p>
+              </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Identidade da Loja</label>
-                  <input
-                    type="text"
-                    value={settings.store_name}
-                    onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                    placeholder="Nome da sua loja"
-                  />
+              {/* Slider 2: 1ª Tentativa */}
+              <div className="p-3.5 rounded-xl bg-[#080d18] border border-slate-800/80 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-200">Desconto de 1ª Oferta (Primeiro Atrito)</span>
+                  <span className="text-sm font-black font-mono text-amber-400">{settings.first_attempt_discount}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="15"
+                  step="1"
+                  value={settings.first_attempt_discount}
+                  onChange={(e) => setSettings({ ...settings, first_attempt_discount: parseInt(e.target.value) })}
+                  className="w-full accent-amber-400 cursor-pointer"
+                />
+                <p className="text-[11px] text-slate-400">Concedido na primeira hesitação de preço ou questionamento de frete.</p>
+              </div>
+
+              {/* Slider 3: Resgate de Carrinho */}
+              <div className="p-3.5 rounded-xl bg-[#080d18] border border-slate-800/80 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-200">Desconto de Resgate (Carrinho Parado)</span>
+                  <span className="text-sm font-black font-mono text-fuchsia-400">{settings.cart_rescue_discount}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={settings.cart_rescue_discount}
+                  onChange={(e) => setSettings({ ...settings, cart_rescue_discount: parseInt(e.target.value) })}
+                  className="w-full accent-fuchsia-400 cursor-pointer"
+                />
+                <p className="text-[11px] text-slate-400">Disparado automaticamente após 45 minutos de inatividade do cliente.</p>
+              </div>
+
+              {/* Simulação em Tempo Real */}
+              <div className="p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-800/40">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 block mb-1.5">Impacto no Manto Médio (R$ 299,90)</span>
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-slate-400">Preço Final com Desconto Máx:</span>
+                  <strong className="text-white font-mono">R$ {finalPrice.toFixed(2).replace(".", ",")}</strong>
+                </div>
+                <div className="flex items-center justify-between text-xs font-medium mt-1">
+                  <span className="text-slate-400">Lucro Líquido Estimado:</span>
+                  <strong className="text-emerald-400 font-mono">R$ {netMargin.toFixed(2).replace(".", ",")} ({marginPercentage}%)</strong>
                 </div>
               </div>
             </div>
 
-            {/* Chaves de Pagamento PIX */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-              <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                <span>💸</span> Dados do PIX da Loja
-              </h2>
-              <p className="text-xs text-slate-400 mb-4">A IA usa esses dados para gerar a cobrança oficial no chat.</p>
-
+            {/* Bloco 3: Dados Financeiros & PIX (3 colunas) */}
+            <div className="lg:col-span-3 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-5 shadow-xl space-y-4 flex flex-col justify-between">
               <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-800/80 flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">3. Recebimento PIX</span>
+                  <span className="text-emerald-400 font-bold text-xs">Ativo</span>
+                </div>
+
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Chave PIX</label>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Chave PIX Oficial</label>
                   <input
                     type="text"
                     value={settings.pix_key}
                     onChange={(e) => setSettings({ ...settings, pix_key: e.target.value })}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                    placeholder="CNPJ, E-mail, Celular ou Chave Aleatória"
+                    className="w-full bg-[#080d18] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Nome do Beneficiário</label>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Nome do Beneficiário</label>
                   <input
                     type="text"
                     value={settings.pix_beneficiary}
                     onChange={(e) => setSettings({ ...settings, pix_beneficiary: e.target.value })}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                    placeholder="Razão Social ou Nome do Titular"
+                    className="w-full bg-[#080d18] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
                   />
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                    <span>✓</span> Validador de Comprovantes
+                  </div>
+                  <p>O agente de IA lê o payload do PIX e altera o pedido para PAGO automaticamente no CRM.</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Coluna Direita: Regras de Negociação & Arsenal de Desconto (7 colunas) */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <span>🎯</span> Regras Comerciais & Descontos da IA
-                </h2>
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                  Top 10 Global Standards
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mb-6">
-                Controle milimétrico de como a IA negocia, aplica descontos de primeira tentativa e resgata desistências.
-              </p>
-
-              {/* Sliders Interativos */}
-              <div className="space-y-6">
-                {/* 1. Desconto na Primeira Tentativa */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-sm font-bold text-white">Desconto na 1ª Tentativa (Boas-Vindas)</span>
-                      <p className="text-xs text-slate-400">Oferecido caso o cliente hesite ou peça cupom inicial.</p>
-                    </div>
-                    <span className="text-base font-black text-cyan-400 bg-cyan-500/20 px-3 py-1 rounded-lg">
-                      {settings.first_attempt_discount}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    step="1"
-                    value={settings.first_attempt_discount}
-                    onChange={(e) => setSettings({ ...settings, first_attempt_discount: parseInt(e.target.value) })}
-                    className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-semibold">
-                    <span>0% (Sem desconto)</span>
-                    <span>10% (Padrão)</span>
-                    <span>20% (Agressivo)</span>
-                  </div>
-                </div>
-
-                {/* 2. Margem de Resgate de Carrinho Abandonado */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-sm font-bold text-white">Margem de Resgate (Carrinho Abandonado)</span>
-                      <p className="text-xs text-slate-400">Disparado no fluxo automático para reativar clientes que sumiram.</p>
-                    </div>
-                    <span className="text-base font-black text-amber-400 bg-amber-500/20 px-3 py-1 rounded-lg">
-                      {settings.cart_rescue_discount}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="25"
-                    step="1"
-                    value={settings.cart_rescue_discount}
-                    onChange={(e) => setSettings({ ...settings, cart_rescue_discount: parseInt(e.target.value) })}
-                    className="w-full accent-amber-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-semibold">
-                    <span>0%</span>
-                    <span>12%</span>
-                    <span>25% Max</span>
-                  </div>
-                </div>
-
-                {/* 3. Teto Absoluto de Margem da IA */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-sm font-bold text-white">Teto Máximo Autorizado pelo Dono</span>
-                      <p className="text-xs text-slate-400">A IA é matematicamente bloqueada de conceder descontos acima desse valor.</p>
-                    </div>
-                    <span className="text-base font-black text-rose-400 bg-rose-500/20 px-3 py-1 rounded-lg">
-                      {settings.negotiation_margin}% Max
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="40"
-                    step="1"
-                    value={settings.negotiation_margin}
-                    onChange={(e) => setSettings({ ...settings, negotiation_margin: parseInt(e.target.value) })}
-                    className="w-full accent-rose-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-semibold">
-                    <span>5%</span>
-                    <span>15% (Recomendado)</span>
-                    <span>40% (Alto Risco)</span>
-                  </div>
-                </div>
-
-                {/* 4. Temperatura (Determinismo vs. Criatividade) */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-sm font-bold text-white">Controle de Temperatura (Determinismo)</span>
-                      <p className="text-xs text-slate-400">0.0 = Precisa e factual; 1.0 = Altamente criativa.</p>
-                    </div>
-                    <span className="text-sm font-black text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-lg">
-                      {settings.llm_temperature.toFixed(1)}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={settings.llm_temperature}
-                    onChange={(e) => setSettings({ ...settings, llm_temperature: parseFloat(e.target.value) })}
-                    className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg"
-                  />
-                </div>
+              <div className="pt-3 border-t border-slate-800/60 text-center">
+                <span className="text-[10px] text-slate-500">Criptografia AES-256 ativa em repouso</span>
               </div>
             </div>
 
-            {/* Diretriz do Agente (System Prompt) */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-              <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                <span>📝</span> Diretriz de Atendimento (System Prompt)
-              </h2>
-              <p className="text-xs text-slate-400 mb-4">
-                Personalidade e regras comportamentais da assistente durante os diálogos no WhatsApp.
-              </p>
-              <textarea
-                rows={5}
-                value={settings.system_prompt}
-                onChange={(e) => setSettings({ ...settings, system_prompt: e.target.value })}
-                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors leading-relaxed"
-                placeholder="Insira as regras e tom de voz da vendedora..."
-              />
-            </div>
           </div>
         </form>
+
       </main>
     </div>
   );

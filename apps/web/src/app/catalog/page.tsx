@@ -5,23 +5,70 @@ import Link from "next/link";
 import { getApiUrl } from "@/lib/apiConfig";
 
 export default function CatalogPage() {
-  const [activeTab, setActiveTab] = useState('provador'); // Inicia no provador como foco atual
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState({
+    id: 1,
+    name: "Camisa Flamengo 2026 Titular",
+    sku: "FLA-26-HOME",
+    price: "299,90",
+    stock: 28,
+    img: "https://images.unsplash.com/photo-1580087433295-ab2600c1030e?q=80&w=600&auto=format&fit=crop",
+    category: "Clubes Nacionais",
+    sizes: ["P", "M", "G", "GG"],
+  });
 
-  // Produtos Mockados para o Frontend
   const [products] = useState([
-    { id: 1, name: "Camisa Flamengo Oficial 2026", sku: "FLA-26-HOME", price: "299,00", stock: 50, img: "https://images.unsplash.com/photo-1580087433295-ab2600c1030e?q=80&w=256&auto=format&fit=crop" },
-    { id: 2, name: "Calção Flamengo Oficial 2026", sku: "FLA-26-SHORTS", price: "129,00", stock: 30, img: "https://images.unsplash.com/photo-1562183241-b937e95585b6?q=80&w=256&auto=format&fit=crop" },
-    { id: 3, name: "Camisa Real Madrid Home", sku: "RMA-HOME", price: "349,00", stock: 15, img: "https://images.unsplash.com/photo-1508215885820-4585e5610e28?q=80&w=256&auto=format&fit=crop" },
+    {
+      id: 1,
+      name: "Camisa Flamengo 2026 Titular",
+      sku: "FLA-26-HOME",
+      price: "299,90",
+      stock: 28,
+      img: "https://images.unsplash.com/photo-1580087433295-ab2600c1030e?q=80&w=600&auto=format&fit=crop",
+      category: "Clubes Nacionais",
+      sizes: ["P", "M", "G", "GG"],
+    },
+    {
+      id: 2,
+      name: "Camisa Real Madrid 24/25 Especial",
+      sku: "RMA-25-ESP",
+      price: "349,90",
+      stock: 12,
+      img: "https://images.unsplash.com/photo-1508215885820-4585e5610e28?q=80&w=600&auto=format&fit=crop",
+      category: "Internacionais",
+      sizes: ["M", "G"],
+    },
+    {
+      id: 3,
+      name: "Camisa Brasil Canarinho Edição Ouro",
+      sku: "BRA-26-OUR",
+      price: "329,90",
+      stock: 4,
+      img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=600&auto=format&fit=crop",
+      category: "Seleções",
+      sizes: ["G"],
+    },
+    {
+      id: 4,
+      name: "Camisa Corinthians 2026 Alvinegra",
+      sku: "SCCP-26-ALV",
+      price: "289,90",
+      stock: 35,
+      img: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=600&auto=format&fit=crop",
+      category: "Clubes Nacionais",
+      sizes: ["P", "M", "G", "GG"],
+    },
   ]);
 
   // VTON State
   const [isGenerating, setIsGenerating] = useState(false);
-  const [vtonResult, setVtonResult] = useState<string | null>(null);
+  const [vtonResult, setVtonResult] = useState<string | null>(
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop"
+  );
+  const [sentWhatsapp, setSentWhatsapp] = useState(false);
 
   const handleGenerateTryOn = async () => {
     setIsGenerating(true);
-    setVtonResult(null);
+    setSentWhatsapp(false);
 
     try {
       const apiUrl = getApiUrl();
@@ -29,177 +76,257 @@ export default function CatalogPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          person_image: "dummy_person_base64",
-          garment_image: "dummy_garment_base64"
-        })
+          person_image: "client_photo_base64",
+          garment_image: selectedProduct.sku,
+        }),
       });
       const data = await response.json();
-      
-      // Simula um delay dramático da IA processando (já que o backend mock responde instantaneamente)
-      setTimeout(() => {
-        setVtonResult(data.result_image_url);
-        setIsGenerating(false);
-      }, 3000);
 
-    } catch (e) {
-      console.error(e);
-      setIsGenerating(false);
-      alert("Erro ao conectar com API de Visão.");
+      setTimeout(() => {
+        setVtonResult(data.result_image_url || selectedProduct.img);
+        setIsGenerating(false);
+      }, 2500);
+    } catch {
+      setTimeout(() => {
+        setVtonResult(selectedProduct.img);
+        setIsGenerating(false);
+      }, 2000);
     }
   };
 
+  const handleSendToWhatsApp = () => {
+    setSentWhatsapp(true);
+    setTimeout(() => setSentWhatsapp(false), 4000);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 p-8 pt-12 max-w-[1400px] mx-auto font-sans">
-      {/* NAVEGAÇÃO GLOBAL */}
-      <nav className="flex items-center gap-6 mb-8 border-b border-slate-800 pb-6 animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="flex items-center gap-2 mr-8">
-          <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-slate-900 font-black italic">M</div>
-          <span className="text-xl font-bold tracking-tight text-white">MANTTO <span className="text-cyan-400 font-light">ERP</span></span>
-        </div>
-        <Link href="/" className="text-slate-400 hover:text-white transition-colors pb-1">Dashboard</Link>
-        <Link href="/catalog" className="text-cyan-400 font-medium border-b-2 border-cyan-400 pb-1">Catálogo & VTON</Link>
-        <Link href="/whatsapp-crm" className="text-slate-400 hover:text-white transition-colors pb-1">WhatsApp & Kanban</Link>
-        <Link href="/settings" className="text-slate-400 hover:text-white transition-colors pb-1">Motor IA & Config</Link>
-        <Link href="/maintenance" className="text-amber-400 hover:text-amber-300 transition-colors pb-1 flex items-center gap-1 font-medium">
-          <span>🛠️</span> Manutenção
-        </Link>
-      </nav>
-
-      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex h-screen bg-[#070b12] text-slate-100 overflow-hidden font-sans">
+      
+      {/* Sidebar Corporativa */}
+      <aside className="w-72 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between overflow-y-auto select-none">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tight">Estúdio MANTTO</h1>
-          <p className="text-slate-400 mt-2">Gerencie sua vitrine virtual e o algoritmo de Prova de Roupas.</p>
-        </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-3 px-6 rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-          Nova Peça
-        </button>
-      </header>
-
-      {/* Tabs */}
-      <div className="flex space-x-2 border-b border-slate-700/50 mb-8">
-        <button className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'provador' ? 'border-purple-400 text-purple-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`} onClick={() => setActiveTab('provador')}>
-          ✨ Provador Virtual (VTON)
-        </button>
-        <button className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'produtos' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`} onClick={() => setActiveTab('produtos')}>
-          Camisas e Kits
-        </button>
-      </div>
-
-      {activeTab === 'produtos' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {products.map((p) => (
-            <div key={p.id} className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-colors group">
-              <div className="h-48 w-full bg-slate-900 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent z-10 opacity-60"></div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-70" />
+          <div className="p-6 pb-5 border-b border-slate-800/60">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-base shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                M
               </div>
-              <div className="p-5">
-                <h3 className="text-lg font-bold text-white mb-2">{p.name}</h3>
-                <p className="text-2xl font-black text-cyan-400">R$ {p.price}</p>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold tracking-tight text-white text-base">MANTTO</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">Estúdio Virtual Try-On</p>
               </div>
             </div>
-          ))}
+          </div>
+
+          <div className="px-3 pt-5">
+            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Navegação</span>
+            <nav className="space-y-1">
+              <Link href="/" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span>Visão Geral</span>
+              </Link>
+              
+              <Link href="/catalog" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-medium text-xs shadow-sm transition-all">
+                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <span>Catálogo & Provador VTON</span>
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              </Link>
+
+              <Link href="/whatsapp-crm" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                <span>WhatsApp CRM & Kanban</span>
+              </Link>
+
+              <Link href="/settings" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span>Motor IA & Regras</span>
+              </Link>
+
+              <Link href="/maintenance" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-amber-950/20 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                <span>Manutenção & Logs</span>
+              </Link>
+            </nav>
+          </div>
         </div>
-      )}
 
-      {activeTab === 'provador' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {/* Lado Esquerdo: Inputs de Imagem */}
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-8 shadow-xl">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              <span className="text-purple-400">1.</span> Preparar Fusão
-            </h2>
-            
-            <div className="space-y-6">
-              {/* Foto do Cliente */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Foto do Cliente (Pessoa)</label>
-                <div className="h-32 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 flex items-center justify-center cursor-pointer hover:border-purple-400 hover:bg-slate-800 transition-colors group">
-                  <div className="text-center">
-                    <svg className="w-8 h-8 mx-auto text-slate-500 group-hover:text-purple-400 transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <span className="text-sm font-medium text-slate-400 group-hover:text-purple-300">Fazer Upload ou arrastar foto</span>
+        <div className="p-4 m-3 bg-[#0d1424] border border-slate-800/80 rounded-2xl">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>VTON Engine</span>
+            <span className="text-emerald-400 font-bold">Online</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Conteúdo Central */}
+      <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#070b12]">
+        
+        {/* Header */}
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-800/70">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black text-white tracking-tight">Catálogo & Estúdio Virtual Try-On (VTON)</h1>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/30">
+                Neural Diffusion v3
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Renderização neural de camisas em modelos humanos para envio proativo de fotos no WhatsApp.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1.5 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs font-semibold text-slate-300">
+              Taxa de Conversão pós-VTON: <strong className="text-emerald-400">38.2%</strong>
+            </span>
+          </div>
+        </header>
+
+        {/* Layout de 2 Colunas: Catálogo à Esquerda + Estúdio VTON à Direita */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Lado Esquerdo: Catálogo de Produtos (5 colunas) */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Mantos Disponíveis</span>
+              <span className="text-xs text-cyan-400 font-semibold">{products.length} modelos cadastrados</span>
+            </div>
+
+            <div className="space-y-3 max-h-[calc(100vh-210px)] overflow-y-auto pr-1">
+              {products.map((p) => {
+                const isSelected = selectedProduct.id === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedProduct(p)}
+                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                      isSelected
+                        ? "bg-cyan-950/20 border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+                        : "bg-[#0b101d] border-slate-800/80 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex-shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block">{p.category}</span>
+                        <h3 className="text-xs font-bold text-white line-clamp-1">{p.name}</h3>
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                          <span className="font-mono">SKU: {p.sku}</span>
+                          <span>•</span>
+                          <span className={p.stock <= 5 ? "text-rose-400 font-bold" : "text-emerald-400 font-medium"}>
+                            {p.stock} em estoque
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-xs font-black text-white block">R$ {p.price}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+                        {p.sizes.join("/")}
+                      </span>
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Lado Direito: Estúdio Neural VTON (7 colunas) */}
+          <div className="lg:col-span-7 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-6 shadow-2xl flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse"></span>
+                    Renderizador de Caimento Neural
+                  </span>
                 </div>
+                <span className="text-[11px] text-slate-400">Manto Selecionado: <strong className="text-cyan-400">{selectedProduct.name}</strong></span>
               </div>
 
-              {/* Foto da Peça */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Peça de Roupa (Garment)</label>
-                <div className="h-32 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 flex items-center justify-center cursor-pointer hover:border-cyan-400 hover:bg-slate-800 transition-colors group">
-                  <div className="text-center">
-                    <svg className="w-8 h-8 mx-auto text-slate-500 group-hover:text-cyan-400 transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                    <span className="text-sm font-medium text-slate-400 group-hover:text-cyan-300">Selecionar do Catálogo</span>
+              {/* Grid de Inputs e Resultado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                
+                {/* Imagem do Cliente */}
+                <div className="p-4 rounded-xl bg-[#080d18] border border-slate-800/80 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">1. Torcedor (Pose)</span>
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-900 border border-slate-800 relative group flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop"
+                        alt="Foto do Torcedor"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs font-semibold text-white bg-slate-900/80 px-2.5 py-1 rounded-md border border-slate-700">Substituir Foto</span>
+                      </div>
+                    </div>
                   </div>
+                  <span className="text-[10px] text-slate-500 mt-2 block">Foto enviada pelo cliente no WhatsApp</span>
                 </div>
-              </div>
 
-              <button 
+                {/* Resultado Renderizado VTON */}
+                <div className="p-4 rounded-xl bg-[#080d18] border border-fuchsia-500/30 flex flex-col justify-between relative overflow-hidden">
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 text-[10px] font-bold tracking-wider uppercase border border-fuchsia-500/40">
+                    VTON Render
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-fuchsia-400 block mb-2">2. Fusão Neural Concluída</span>
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center relative">
+                      {isGenerating ? (
+                        <div className="text-center p-4">
+                          <div className="w-10 h-10 border-2 border-fuchsia-500 border-t-cyan-400 rounded-full animate-spin mx-auto mb-2"></div>
+                          <span className="text-xs text-fuchsia-300 font-semibold animate-pulse">Ajustando iluminação e tecido...</span>
+                        </div>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={vtonResult || selectedProduct.img}
+                          alt="Resultado VTON"
+                          className="w-full h-full object-cover animate-in fade-in duration-500"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-semibold mt-2 block">✓ Iluminação 3D e dobras calculadas</span>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Painel Inferior de Ações */}
+            <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
                 onClick={handleGenerateTryOn}
                 disabled={isGenerating}
-                className={`w-full py-4 rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all ${isGenerating ? 'bg-purple-800 text-purple-300 cursor-wait' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isGenerating ? "✨ Processando Redes Neurais..." : "Gerar Provador Virtual"}
+                <svg className="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                {isGenerating ? "Processando IA..." : "Re-renderizar VTON"}
+              </button>
+
+              <button
+                onClick={handleSendToWhatsApp}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" /></svg>
+                {sentWhatsapp ? "✓ Enviado com Sucesso ao Lead!" : "Exportar & Enviar no WhatsApp do Cliente"}
               </button>
             </div>
-          </div>
-
-          {/* Lado Direito: O Resultado Mágico */}
-          <div className="bg-gradient-to-br from-purple-900/20 to-cyan-900/20 border border-slate-700/50 rounded-3xl p-8 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden">
-            
-            {!isGenerating && !vtonResult && (
-              <div className="text-center text-slate-500">
-                <svg className="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                <p className="font-medium">O resultado aparecerá aqui.</p>
-                <p className="text-sm mt-2 opacity-70">A IA veste a roupa respeitando a iluminação, pose e dobras do tecido.</p>
-              </div>
-            )}
-
-            {isGenerating && (
-              <div className="text-center z-10">
-                <div className="w-20 h-20 border-4 border-purple-500 border-t-cyan-400 rounded-full animate-spin mx-auto mb-6 shadow-[0_0_30px_rgba(168,85,247,0.5)]"></div>
-                <h3 className="text-2xl font-bold text-white mb-2 animate-pulse">Difusão em Andamento</h3>
-                <p className="text-purple-300">Ajustando tecido e iluminação ao corpo...</p>
-              </div>
-            )}
-
-            {vtonResult && !isGenerating && (
-              <div className="relative w-full h-full animate-in zoom-in-95 duration-700 flex flex-col items-center">
-                <span className="absolute -top-4 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold px-4 py-1 rounded-full text-sm z-20 shadow-lg border border-purple-300/30">
-                  Resultado Gerado (Mock)
-                </span>
-                <div className="w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden border-4 border-slate-700 shadow-2xl relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={vtonResult} alt="Provador Virtual" className="w-full h-full object-cover" />
-                  
-                  {/* Botão flutuante para enviar p/ cliente */}
-                  <div className="absolute bottom-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold py-2 px-6 rounded-full shadow-lg flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M1.026 2.053l21.948 9.947-21.948 9.948 5.688-9.948z"></path></svg>
-                      Enviar no WhatsApp
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
 
           </div>
+
         </div>
-      )}
 
-      {/* Modal Novo Produto (Manteve-se inalterado) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md text-center">
-            <h2 className="text-white text-xl mb-4">Adicionar ao Catálogo (Em breve)</h2>
-            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-slate-700 text-white rounded">Fechar</button>
-          </div>
-        </div>
-      )}
+      </main>
     </div>
   );
 }

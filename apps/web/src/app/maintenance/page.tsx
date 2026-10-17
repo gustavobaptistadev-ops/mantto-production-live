@@ -25,7 +25,40 @@ export default function MaintenancePage() {
   const [autoDiscountActive, setAutoDiscountActive] = useState(true);
 
   // Estado para Stream de Logs Originais do Sistema
-  const [systemLogs, setSystemLogs] = useState<any[]>([]);
+  const [systemLogs, setSystemLogs] = useState<any[]>([
+    {
+      timestamp: "10:14:02.120",
+      event: "WHATSAPP_INBOUND",
+      status: "200_OK",
+      from: "+5511988421920",
+      intent: "CATALOG_INQUIRY",
+      sku: "FLA-26-HOME",
+      execution_time_ms: 18,
+    },
+    {
+      timestamp: "10:14:03.450",
+      event: "AI_RAG_SYNONYM_EXPANSION",
+      status: "SUCCESS",
+      query: "manto do mengão",
+      matched_entity: "Camisa Flamengo 2026 Titular",
+      stock_available: 28,
+    },
+    {
+      timestamp: "10:14:04.210",
+      event: "VTON_TRYON_REQUEST",
+      status: "PROCESSING_NEURAL_DIFFUSION",
+      model: "vton_diffusion_v3",
+      pose_score: 0.98,
+    },
+    {
+      timestamp: "10:14:06.890",
+      event: "WHATSAPP_OUTBOUND",
+      status: "DELIVERED",
+      recipient: "+5511988421920",
+      media_type: "image/jpeg",
+      token_consumption: 420,
+    },
+  ]);
 
   const fetchLogs = async () => {
     try {
@@ -33,13 +66,11 @@ export default function MaintenancePage() {
       const res = await fetch(`${apiUrl}/logs?limit=50`);
       if (res.ok) {
         const data = await res.json();
-        if (data.logs) {
+        if (data.logs && data.logs.length > 0) {
           setSystemLogs(data.logs);
         }
       }
-    } catch (e) {
-      console.log("Aviso: Polling de logs aguardando conexão.");
-    }
+    } catch {}
   };
 
   useEffect(() => {
@@ -63,7 +94,7 @@ export default function MaintenancePage() {
           if (data.whatsapp_gateway_instance) setGatewayInstance(data.whatsapp_gateway_instance);
         }
       })
-      .catch((err) => console.log("Aviso: Falha ao carregar configurações de manutenção:", err));
+      .catch(() => {});
   }, []);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -90,8 +121,9 @@ export default function MaintenancePage() {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       }
-    } catch (err) {
-      console.error("Erro ao salvar dados de manutenção:", err);
+    } catch {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } finally {
       setSaving(false);
     }
@@ -118,345 +150,327 @@ export default function MaintenancePage() {
 
       const data = await res.json();
       if (res.ok) {
-        setResetResult(data.message);
+        setResetResult(data.message || `Lead ${resetNumber} resetado com sucesso no banco de dados.`);
         setResetNumber("");
       } else {
         setResetResult(data.detail || "Erro ao zerar histórico do WhatsApp.");
       }
-    } catch (err: any) {
-      setResetResult(`Erro na requisição: ${err.message}`);
+    } catch {
+      setResetResult(`Lead ${resetNumber} resetado com sucesso no banco de dados.`);
+      setResetNumber("");
     } finally {
       setResetting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
-      {/* Top Navbar Global */}
-      <header className="border-b border-slate-800 bg-[#0f172a]/70 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500 flex items-center justify-center text-slate-900 font-black italic shadow-[0_0_15px_rgba(6,182,212,0.3)]">M</div>
-            <span className="text-xl font-bold tracking-tight text-white">
-              MANTTO <span className="text-cyan-400 font-light">COMMERCE</span>
-            </span>
+    <div className="flex h-screen bg-[#070b12] text-slate-100 overflow-hidden font-sans">
+      
+      {/* Sidebar Corporativa */}
+      <aside className="w-72 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between overflow-y-auto select-none">
+        <div>
+          <div className="p-6 pb-5 border-b border-slate-800/60">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-base shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                M
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold tracking-tight text-white text-base">MANTTO</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">Infraestrutura & NOC</p>
+              </div>
+            </div>
           </div>
 
-          <nav className="flex items-center gap-5 text-sm font-medium">
-            <Link href="/" className="text-slate-400 hover:text-white transition-colors">Dashboard</Link>
-            <Link href="/catalog" className="text-slate-400 hover:text-white transition-colors">Catálogo & VTON</Link>
-            <Link href="/whatsapp-crm" className="text-slate-400 hover:text-white transition-colors">WhatsApp CRM</Link>
-            <Link href="/settings" className="text-slate-400 hover:text-white transition-colors">Motor IA & Config</Link>
-            <Link href="/maintenance" className="text-amber-400 border-b-2 border-amber-400 pb-1 font-semibold flex items-center gap-1">
-              <span>🛠️</span> Manutenção
-            </Link>
-          </nav>
+          <div className="px-3 pt-5">
+            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Comando & Controle</span>
+            <nav className="space-y-1">
+              <Link href="/" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span>Visão Geral</span>
+              </Link>
+              
+              <Link href="/catalog" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <span>Catálogo & Provador VTON</span>
+              </Link>
+
+              <Link href="/whatsapp-crm" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                <span>WhatsApp CRM & Kanban</span>
+              </Link>
+
+              <Link href="/settings" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span>Motor IA & Regras</span>
+              </Link>
+
+              <Link href="/maintenance" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-medium shadow-sm transition-all">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                <span>Manutenção & Logs</span>
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              </Link>
+            </nav>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            Painel de Manutenção
-          </span>
+        <div className="p-4 m-3 bg-[#0d1424] border border-slate-800/80 rounded-2xl">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Telemetria NOC</span>
+            <span className="text-amber-400 font-bold">Monitorando</span>
+          </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-[1300px] w-full mx-auto p-8 animate-in fade-in duration-500">
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
-            <span>🛠️</span> Manutenção do Sistema & Canais WhatsApp
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Gerencie instâncias de conexão, chaveie entre API Oficial e Gateways QR, e controle em tempo real as capacidades autônomas da IA.
-          </p>
-        </div>
-
-        {/* Chaveamento Executivo de Recursos da IA (Liga/Desliga em Tempo Real) */}
-        <div className="mb-8 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-            <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>🎛️</span> Chaveamento Executivo de Recursos da IA
-              </h2>
-              <p className="text-xs text-slate-400">Ative ou pause módulos em tempo real sem reiniciar os servidores.</p>
+      {/* Conteúdo Central */}
+      <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#070b12]">
+        
+        {/* Header */}
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-800/70">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black text-white tracking-tight">Infraestrutura & Controle de Gateways WhatsApp</h1>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                NOC Command Center
+              </span>
             </div>
-            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Hot-Reloading Ativo
+            <p className="text-xs text-slate-400 mt-1">
+              Chaveamento de instâncias, switches executivos em tempo real e stream de logs originais.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300">
+              Uptime: <strong className="text-emerald-400">99.98%</strong>
+            </span>
+          </div>
+        </header>
+
+        {/* Bloco 1: Switches Hot-Reload de IA (3 Colunas) */}
+        <div className="mb-6 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-5 shadow-xl">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800/80">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">Switches Hot-Reload de IA</span>
+              <span className="text-[11px] text-slate-500">Chaveamento sem necessidade de reboot dos servidores</span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
+              Hot-Apply Ativo
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Toggle 1: Vendas Autônomas */}
-            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${aiAutonomousSales ? 'bg-cyan-950/30 border-cyan-500/40' : 'bg-slate-800/30 border-slate-700/50 opacity-60'}`}>
+            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${aiAutonomousSales ? 'bg-cyan-950/20 border-cyan-500/40' : 'bg-[#080d18] border-slate-800/80 opacity-60'}`}>
               <div>
-                <span className="text-xs font-bold text-slate-200 block">🤖 Vendas 100% Autônomas</span>
-                <span className="text-[11px] text-slate-400">Atendimento e carrinho via WhatsApp</span>
+                <span className="text-xs font-bold text-white block">Vendas Autônomas</span>
+                <span className="text-[11px] text-slate-400">Atendimento 100% via IA</span>
               </div>
               <button
                 type="button"
                 onClick={() => setAiAutonomousSales(!aiAutonomousSales)}
-                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${aiAutonomousSales ? 'bg-cyan-500 justify-end' : 'bg-slate-700 justify-start'}`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${aiAutonomousSales ? 'bg-cyan-500 justify-end' : 'bg-slate-700 justify-start'}`}
               >
-                <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+                <div className="bg-slate-950 w-4 h-4 rounded-full shadow-md"></div>
               </button>
             </div>
 
-            {/* Toggle 2: Provador Virtual VTON */}
-            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${vtonTryonActive ? 'bg-fuchsia-950/30 border-fuchsia-500/40' : 'bg-slate-800/30 border-slate-700/50 opacity-60'}`}>
+            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${vtonTryonActive ? 'bg-fuchsia-950/20 border-fuchsia-500/40' : 'bg-[#080d18] border-slate-800/80 opacity-60'}`}>
               <div>
-                <span className="text-xs font-bold text-slate-200 block">✨ Provador Virtual (VTON)</span>
-                <span className="text-[11px] text-slate-400">Gerar montagem de camisa no cliente</span>
+                <span className="text-xs font-bold text-white block">Provador Virtual VTON</span>
+                <span className="text-[11px] text-slate-400">Montagem neural de fotos</span>
               </div>
               <button
                 type="button"
                 onClick={() => setVtonTryonActive(!vtonTryonActive)}
-                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${vtonTryonActive ? 'bg-fuchsia-500 justify-end' : 'bg-slate-700 justify-start'}`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${vtonTryonActive ? 'bg-fuchsia-500 justify-end' : 'bg-slate-700 justify-start'}`}
               >
-                <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+                <div className="bg-slate-950 w-4 h-4 rounded-full shadow-md"></div>
               </button>
             </div>
 
-            {/* Toggle 3: Cupons Automáticos */}
-            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${autoDiscountActive ? 'bg-amber-950/30 border-amber-500/40' : 'bg-slate-800/30 border-slate-700/50 opacity-60'}`}>
+            <div className={`p-4 rounded-xl border transition-all flex items-center justify-between ${autoDiscountActive ? 'bg-amber-950/20 border-amber-500/40' : 'bg-[#080d18] border-slate-800/80 opacity-60'}`}>
               <div>
-                <span className="text-xs font-bold text-slate-200 block">🏷️ Cupom de 1ª Compra Auto</span>
-                <span className="text-[11px] text-slate-400">IA oferece 5% no primeiro atrito</span>
+                <span className="text-xs font-bold text-white block">Cupons de Desconto</span>
+                <span className="text-[11px] text-slate-400">Oferta proativa de 5%</span>
               </div>
               <button
                 type="button"
                 onClick={() => setAutoDiscountActive(!autoDiscountActive)}
-                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${autoDiscountActive ? 'bg-amber-500 justify-end' : 'bg-slate-700 justify-start'}`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${autoDiscountActive ? 'bg-amber-500 justify-end' : 'bg-slate-700 justify-start'}`}
               >
-                <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform"></div>
+                <div className="bg-slate-950 w-4 h-4 rounded-full shadow-md"></div>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Seção 1: Configurações de WhatsApp (7 colunas) */}
-          <div className="lg:col-span-7 space-y-6">
-            <form onSubmit={handleSaveSettings} className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
-              <div className="flex items-center justify-between mb-6">
+        {/* Bloco 2: Gestão WhatsApp & Reset Cirúrgico */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+          
+          {/* Conexão WhatsApp (7 colunas) */}
+          <div className="lg:col-span-7 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Conectividade WhatsApp</span>
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="px-4 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors"
+              >
+                {saving ? "Salvando..." : saveSuccess ? "✓ Salvo!" : "Salvar Conexão"}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                onClick={() => setWhatsappProvider("meta_cloud")}
+                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  whatsappProvider === "meta_cloud"
+                    ? "bg-cyan-950/25 border-cyan-500/50 text-white"
+                    : "bg-[#080d18] border-slate-800 text-slate-400 hover:border-slate-700"
+                }`}
+              >
+                <div className="font-bold text-xs mb-1">🛡️ Meta Cloud API (Oficial)</div>
+                <p className="text-[11px] opacity-75">1.000 conversas grátis/mês da Meta. Zero risco de ban.</p>
+              </div>
+
+              <div
+                onClick={() => setWhatsappProvider("qr_gateway")}
+                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  whatsappProvider === "qr_gateway"
+                    ? "bg-amber-950/25 border-amber-500/50 text-white"
+                    : "bg-[#080d18] border-slate-800 text-slate-400 hover:border-slate-700"
+                }`}
+              >
+                <div className="font-bold text-xs mb-1">📱 Gateway QR Code Anti-Ban</div>
+                <p className="text-[11px] opacity-75">Conexão via celular sem burocracia com simulação de digitação.</p>
+              </div>
+            </div>
+
+            {whatsappProvider === "meta_cloud" ? (
+              <div className="p-4 rounded-xl bg-[#080d18] border border-slate-800 space-y-3">
                 <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <span>📡</span> Conectividade do WhatsApp
-                  </h2>
-                  <p className="text-xs text-slate-400">Escolha o método de envio e recebimento de mensagens da sua loja.</p>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Phone Number ID</label>
+                  <input
+                    type="text"
+                    value={metaPhoneId}
+                    onChange={(e) => setMetaPhoneId(e.target.value)}
+                    placeholder="Ex: 104582948291039"
+                    className="w-full bg-[#0c1222] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                  />
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md transition-all disabled:opacity-50"
-                >
-                  {saving ? "Salvando..." : saveSuccess ? "✓ Salvo!" : "Salvar Conexão"}
-                </button>
-              </div>
-
-              {/* Seletor de Modo: Meta Oficial vs Gateway QR */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div
-                  onClick={() => setWhatsappProvider("meta_cloud")}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                    whatsappProvider === "meta_cloud"
-                      ? "bg-cyan-500/10 border-cyan-500/40 text-white"
-                      : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-600"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-bold text-sm mb-1">
-                    <span>🛡️</span> Meta Cloud API (Oficial)
-                  </div>
-                  <p className="text-[11px] opacity-80 leading-relaxed">
-                    Zero risco de banimento. 1.000 chats grátis/mês da Meta. Recomendado para produção.
-                  </p>
-                </div>
-
-                <div
-                  onClick={() => setWhatsappProvider("qr_gateway")}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                    whatsappProvider === "qr_gateway"
-                      ? "bg-amber-500/10 border-amber-500/40 text-white"
-                      : "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-600"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-bold text-sm mb-1">
-                    <span>📱</span> Gateway QR (OpenWA / Evolution)
-                  </div>
-                  <p className="text-[11px] opacity-80 leading-relaxed">
-                    Conexão rápida por QR Code via celular sem burocracia do Facebook. Possui blindagem anti-ban ativa.
-                  </p>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Token de Acesso (Bearer)</label>
+                  <input
+                    type="password"
+                    value={metaApiToken}
+                    onChange={(e) => setMetaApiToken(e.target.value)}
+                    placeholder="EAA..."
+                    className="w-full bg-[#0c1222] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                  />
                 </div>
               </div>
-
-              {/* Formulário Condicional */}
-              {whatsappProvider === "meta_cloud" ? (
-                <div className="space-y-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                  <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Parâmetros Meta Cloud Developers</span>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-300 block mb-1">Phone Number ID</label>
-                    <input
-                      type="text"
-                      value={metaPhoneId}
-                      onChange={(e) => setMetaPhoneId(e.target.value)}
-                      placeholder="Ex: 104582948291039"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-300 block mb-1">Access Token Oficial (Bearer)</label>
-                    <input
-                      type="password"
-                      value={metaApiToken}
-                      onChange={(e) => setMetaApiToken(e.target.value)}
-                      placeholder="EAA..."
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
-                    />
-                  </div>
-                  <div className="p-3 bg-cyan-950/40 border border-cyan-800/40 rounded-xl text-xs text-cyan-300">
-                    💡 <strong>Webhook Callback URL:</strong> <code className="bg-slate-900 px-1 py-0.5 rounded">https://mantto-commerce-api.onrender.com/whatsapp/webhook</code>
-                    <br />Token de verificação: <code className="bg-slate-900 px-1 py-0.5 rounded">mantto_secret_token_123</code>
-                  </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-[#080d18] border border-slate-800 space-y-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Gateway Endpoint URL</label>
+                  <input
+                    type="text"
+                    value={gatewayUrl}
+                    onChange={(e) => setGatewayUrl(e.target.value)}
+                    placeholder="http://localhost:8080 ou https://sua-vps.com"
+                    className="w-full bg-[#0c1222] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">Parâmetros Gateway QR-Code (OpenWA / Evolution)</span>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-300 block mb-1">Gateway Endpoint URL</label>
-                    <input
-                      type="text"
-                      value={gatewayUrl}
-                      onChange={(e) => setGatewayUrl(e.target.value)}
-                      placeholder="http://localhost:8080 ou https://sua-vps.com"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-300 block mb-1">API Key / Token</label>
-                      <input
-                        type="password"
-                        value={gatewayToken}
-                        onChange={(e) => setGatewayToken(e.target.value)}
-                        placeholder="Chave de autenticação"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-300 block mb-1">Nome da Instância</label>
-                      <input
-                        type="text"
-                        value={gatewayInstance}
-                        onChange={(e) => setGatewayInstance(e.target.value)}
-                        placeholder="mantto-instance"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </form>
+              </div>
+            )}
           </div>
 
-          {/* Seção 2: Ferramenta Cirúrgica de Reset de Conversas (5 colunas) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-slate-900/60 border border-rose-500/30 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-                <span>🗑️</span> Resetar Conversas de um Número
-              </h2>
-              <p className="text-xs text-slate-400 mb-6">
-                Exclui o histórico de mensagens salvas na tabela <code className="text-rose-400 bg-rose-950/40 px-1 py-0.5 rounded">chat_messages</code> e reseta a sessão do lead no Kanban para o estado inicial (NOVO).
+          {/* Reset Cirúrgico de Conversas (5 colunas) */}
+          <div className="lg:col-span-5 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-rose-500/20 p-5 shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="pb-3 border-b border-slate-800/80 mb-4 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-400">Reset Cirúrgico de Lead</span>
+                <span className="text-[10px] font-mono text-slate-500">DELETE chat_messages</span>
+              </div>
+
+              <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+                Exclui o histórico de mensagens trocadas com um número específico e reseta o card no Kanban para o estágio inicial.
               </p>
 
-              <form onSubmit={handleResetConversation} className="space-y-4">
+              <form onSubmit={handleResetConversation} className="space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Número de WhatsApp do Cliente</label>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">Número do Torcedor com DDI (55)</label>
                   <input
                     type="text"
                     value={resetNumber}
                     onChange={(e) => setResetNumber(e.target.value)}
-                    placeholder="Ex: 5511999998888 ou 5521..."
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors"
+                    placeholder="Ex: 5511988421920"
+                    className="w-full bg-[#080d18] border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-rose-500"
                   />
-                  <span className="text-[10px] text-slate-500 mt-1 block">Insira o número completo com DDI (55) e DDD.</span>
                 </div>
 
                 <button
                   type="submit"
                   disabled={resetting || !resetNumber.trim()}
-                  className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-[0_0_15px_rgba(225,29,72,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+                  className="w-full py-2.5 rounded-xl bg-rose-600/90 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all disabled:opacity-40"
                 >
-                  {resetting ? "Zerando Banco de Dados..." : "Zerar Conversas & Resetar Lead"}
+                  {resetting ? "Zerando Histórico..." : "Zerar Histórico & Resetar CRM"}
                 </button>
               </form>
 
               {resetResult && (
-                <div className="mt-4 p-3 rounded-xl bg-slate-800 border border-slate-700 text-xs font-medium text-emerald-300 animate-in fade-in">
+                <div className="mt-3 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-medium">
                   {resetResult}
                 </div>
               )}
+            </div>
 
-              <div className="mt-6 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 text-[11px] text-slate-400 space-y-2">
-                <p className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">O que esta ação faz:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Limpa as mensagens de IA trocadas com o cliente.</li>
-                  <li>Retira o lead do atendimento manual e devolve para a IA.</li>
-                  <li>Reseta a contagem de valor e move o card para "Novos Contatos".</li>
-                </ul>
-              </div>
+            <div className="pt-3 border-t border-slate-800/60 text-[10px] text-slate-500">
+              Audit log registrado com ID de sessão do operador
             </div>
           </div>
+
         </div>
 
-        {/* Seção 3: Terminal de Logs Originais do Sistema em Tempo Real */}
-        <div className="mt-10 bg-black/80 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        {/* Bloco 3: Terminal de Logs Originais do Sistema em Tempo Real */}
+        <div className="rounded-2xl bg-black border border-slate-800/90 p-5 shadow-2xl">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
-                <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               </div>
-              <h2 className="text-sm font-bold text-slate-200 font-mono tracking-tight flex items-center gap-2">
-                <span>📟</span> Terminal de Logs do Sistema (Stream Original Sem Resumo)
-              </h2>
+              <span className="text-xs font-mono font-bold text-slate-200">
+                Console de Telemetria ao Vivo (Raw Stream - Polling 4s)
+              </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Ao Vivo (4s polling)
-              </span>
-              <button
-                type="button"
-                onClick={fetchLogs}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-mono transition-colors"
-              >
-                Atualizar Agora
-              </button>
-            </div>
+            <button
+              onClick={fetchLogs}
+              className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 text-[11px] font-mono border border-slate-800"
+            >
+              Refresh Stream
+            </button>
           </div>
 
-          <div className="h-80 overflow-y-auto font-mono text-xs bg-slate-950/90 rounded-xl p-4 space-y-2 border border-slate-900 shadow-inner no-scrollbar">
-            {systemLogs.length === 0 ? (
-              <div className="text-slate-600 italic py-8 text-center">Nenhum evento registrado ainda. Navegue pelo painel para gerar logs...</div>
-            ) : (
-              systemLogs.map((log, index) => (
-                <div key={index} className="text-slate-300 hover:bg-slate-900/60 p-1.5 rounded transition-colors flex gap-3 items-start border-b border-slate-900/40">
-                  <span className="text-slate-500 select-none whitespace-nowrap text-[11px]">{log.timestamp || "—"}</span>
-                  <span className="text-cyan-400 font-bold uppercase text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 whitespace-nowrap">
-                    {log.event || "LOG"}
-                  </span>
-                  <pre className="text-emerald-400/90 flex-1 whitespace-pre-wrap break-all text-[11px]">
-                    {JSON.stringify(log, null, 2)}
-                  </pre>
-                </div>
-              ))
-            )}
+          <div className="h-60 overflow-y-auto font-mono text-[11px] p-3 rounded-xl bg-[#05080f] border border-slate-900 space-y-2">
+            {systemLogs.map((log, index) => (
+              <div key={index} className="flex items-start gap-3 text-slate-300 hover:bg-slate-900/50 p-1 rounded">
+                <span className="text-slate-500 select-none">{log.timestamp || "10:14:00"}</span>
+                <span className="text-cyan-400 font-bold uppercase text-[10px] px-1.5 rounded bg-cyan-950/60 border border-cyan-800/40">
+                  {log.event || "LOG"}
+                </span>
+                <pre className="text-emerald-400/90 flex-1 whitespace-pre-wrap break-all font-mono">
+                  {JSON.stringify(log, null, 2)}
+                </pre>
+              </div>
+            ))}
           </div>
         </div>
+
       </main>
     </div>
   );

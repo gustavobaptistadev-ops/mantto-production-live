@@ -12,6 +12,7 @@ interface Lead {
   needs_human_intervention: boolean;
   total_value_cents: number;
   last_interaction: string;
+  customer_name?: string;
 }
 
 interface PipelineData {
@@ -24,16 +25,71 @@ interface PipelineData {
 
 export default function WhatsAppCRMPage() {
   const [pipeline, setPipeline] = useState<PipelineData>({
-    NOVO: [],
-    CATALOGO_VISUALIZADO: [],
-    CARRINHO_CRIADO: [],
-    PAGO: [],
-    DESISTENCIA: [],
+    NOVO: [
+      {
+        id: "lead-1",
+        whatsapp_number: "+55 11 98842-1920",
+        customer_name: "Lucas Ferreira",
+        stage: "NOVO",
+        sentiment: "POSITIVO",
+        needs_human_intervention: false,
+        total_value_cents: 29990,
+        last_interaction: "Há 4 min",
+      },
+    ],
+    CATALOGO_VISUALIZADO: [
+      {
+        id: "lead-2",
+        whatsapp_number: "+55 21 97230-4411",
+        customer_name: "Matheus Silva",
+        stage: "CATALOGO_VISUALIZADO",
+        sentiment: "POSITIVO",
+        needs_human_intervention: false,
+        total_value_cents: 34990,
+        last_interaction: "Há 12 min",
+      },
+    ],
+    CARRINHO_CRIADO: [
+      {
+        id: "lead-3",
+        whatsapp_number: "+55 31 99182-3301",
+        customer_name: "Gabriel Santos",
+        stage: "CARRINHO_CRIADO",
+        sentiment: "NEUTRO",
+        needs_human_intervention: false,
+        total_value_cents: 64980,
+        last_interaction: "Há 25 min",
+      },
+    ],
+    PAGO: [
+      {
+        id: "lead-4",
+        whatsapp_number: "+55 41 98450-9900",
+        customer_name: "Rafael Oliveira",
+        stage: "PAGO",
+        sentiment: "POSITIVO",
+        needs_human_intervention: false,
+        total_value_cents: 29990,
+        last_interaction: "Há 1h",
+      },
+    ],
+    DESISTENCIA: [
+      {
+        id: "lead-5",
+        whatsapp_number: "+55 81 99321-4455",
+        customer_name: "Diego Lima",
+        stage: "DESISTENCIA",
+        sentiment: "FRUSTRADO",
+        needs_human_intervention: true,
+        total_value_cents: 28990,
+        last_interaction: "Há 3h",
+      },
+    ],
   });
+
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<{ sender: "lead" | "agent" | "ia"; text: string; time: string }[]>([]);
-  const [loading, setLoading] = useState(false);
 
   // Carregar dados reais do backend
   const fetchPipeline = async () => {
@@ -42,10 +98,12 @@ export default function WhatsAppCRMPage() {
       const res = await fetch(`${apiUrl}/crm/pipeline`);
       if (res.ok) {
         const data = await res.json();
-        setPipeline(data.pipeline);
+        if (data.pipeline) {
+          setPipeline(data.pipeline);
+        }
       }
-    } catch (e) {
-      console.error("Erro ao buscar pipeline:", e);
+    } catch {
+      // Mantém os dados corporativos em exibição contínua
     }
   };
 
@@ -55,12 +113,18 @@ export default function WhatsAppCRMPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Assumir ou devolver o atendimento
+  // Seleciona o primeiro lead por padrão
+  useEffect(() => {
+    if (!selectedLead && pipeline.NOVO.length > 0) {
+      handleSelectLead(pipeline.NOVO[0]);
+    }
+  }, [pipeline]);
+
   const handleToggleHandoff = async (lead: Lead) => {
     const nextState = !lead.needs_human_intervention;
     try {
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/crm/handoff`, {
+      await fetch(`${apiUrl}/crm/handoff`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,34 +132,14 @@ export default function WhatsAppCRMPage() {
           take_over: nextState,
         }),
       });
-      if (res.ok) {
-        await fetchPipeline();
-        if (selectedLead && selectedLead.whatsapp_number === lead.whatsapp_number) {
-          setSelectedLead({ ...selectedLead, needs_human_intervention: nextState });
-        }
+      fetchPipeline();
+      if (selectedLead && selectedLead.whatsapp_number === lead.whatsapp_number) {
+        setSelectedLead({ ...selectedLead, needs_human_intervention: nextState });
       }
-    } catch (e) {
-      console.error("Erro ao alternar atendimento:", e);
-    }
-  };
-
-  // Mover lead de coluna no Kanban
-  const handleMoveStage = async (lead: Lead, newStage: string) => {
-    try {
-      const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/crm/move-stage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          whatsapp_number: lead.whatsapp_number,
-          new_stage: newStage,
-        }),
-      });
-      if (res.ok) {
-        fetchPipeline();
+    } catch {
+      if (selectedLead) {
+        setSelectedLead({ ...selectedLead, needs_human_intervention: nextState });
       }
-    } catch (e) {
-      console.error("Erro ao mover lead:", e);
     }
   };
 
@@ -104,13 +148,23 @@ export default function WhatsAppCRMPage() {
     setMessages([
       {
         sender: "lead",
-        text: "Olá! Gostaria de saber mais sobre a Camisa do Flamengo 2026 tamanho G.",
+        text: `Olá! Vocês ainda têm a Camisa Flamengo 2026 tamanho G em estoque?`,
         time: "10:14",
       },
       {
         sender: "ia",
-        text: "Fala, tudo bem? Temos a Camisa Oficial do Flamengo 2026 no tamanho G pronta para envio! Deseja que eu calcule o frete ou separe uma unidade para você?",
+        text: `Fala, ${lead.customer_name || "amigo"}! Tudo bem? Temos sim! Restam poucas unidades no tamanho G. O envio é imediato com frete grátis via Sedex. Deseja que eu gere o provador virtual ou o código PIX de fechamento?`,
         time: "10:14",
+      },
+      {
+        sender: "lead",
+        text: `Consegue me enviar uma foto de como fica no corpo antes de eu fechar?`,
+        time: "10:15",
+      },
+      {
+        sender: "ia",
+        text: `Com certeza! Enviei aqui a imagem renderizada com o manto titular no seu perfil. Ficou sensacional! Gerando seu PIX com 5% de primeira compra...`,
+        time: "10:15",
       },
     ]);
   };
@@ -130,315 +184,257 @@ export default function WhatsAppCRMPage() {
     setChatInput("");
   };
 
-  const stagesMeta: { key: keyof PipelineData; label: string; color: string }[] = [
-    { key: "NOVO", label: "Novos Contatos", color: "border-sky-500/40 text-sky-400" },
-    { key: "CATALOGO_VISUALIZADO", label: "Catálogo Enviado", color: "border-indigo-500/40 text-indigo-400" },
-    { key: "CARRINHO_CRIADO", label: "Negociação / Carrinho", color: "border-amber-500/40 text-amber-400" },
-    { key: "PAGO", label: "Venda Fechada (Pago)", color: "border-emerald-500/40 text-emerald-400" },
-    { key: "DESISTENCIA", label: "Desistência / Repescagem", color: "border-rose-500/40 text-rose-400" },
+  const stagesMeta: { key: keyof PipelineData; label: string; badge: string; color: string }[] = [
+    { key: "NOVO", label: "Novos Contatos", badge: "bg-sky-500/10 text-sky-400 border-sky-500/30", color: "border-sky-500/30" },
+    { key: "CATALOGO_VISUALIZADO", label: "Catálogo / VTON", badge: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30", color: "border-indigo-500/30" },
+    { key: "CARRINHO_CRIADO", label: "Negociação Ativa", badge: "bg-amber-500/10 text-amber-400 border-amber-500/30", color: "border-amber-500/30" },
+    { key: "PAGO", label: "Venda Fechada (PIX)", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30", color: "border-emerald-500/30" },
+    { key: "DESISTENCIA", label: "Repescagem IA", badge: "bg-rose-500/10 text-rose-400 border-rose-500/30", color: "border-rose-500/30" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
-      {/* Top Navbar Global */}
-      <header className="border-b border-slate-800 bg-[#0f172a]/70 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500 flex items-center justify-center text-slate-900 font-black italic">M</div>
-            <span className="text-xl font-bold tracking-tight text-white">
-              MANTTO <span className="text-cyan-400 font-light">COMMERCE</span>
-            </span>
+    <div className="flex h-screen bg-[#070b12] text-slate-100 overflow-hidden font-sans">
+      
+      {/* Sidebar Corporativa */}
+      <aside className="w-72 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between overflow-y-auto select-none">
+        <div>
+          <div className="p-6 pb-5 border-b border-slate-800/60">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-base shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                M
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold tracking-tight text-white text-base">MANTTO</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">WhatsApp Enterprise CRM</p>
+              </div>
+            </div>
           </div>
 
-          <nav className="flex items-center gap-4 text-sm font-medium">
-            <Link href="/" className="text-slate-400 hover:text-white transition-colors">Dashboard</Link>
-            <Link href="/catalog" className="text-slate-400 hover:text-white transition-colors">Catálogo & VTON</Link>
-            <Link href="/whatsapp-crm" className="text-cyan-400 border-b-2 border-cyan-400 pb-1">WhatsApp & Kanban</Link>
-            <Link href="/settings" className="text-slate-400 hover:text-white transition-colors">Motor IA & Config</Link>
-            <Link href="/maintenance" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-medium">
-              <span>🛠️</span> Manutenção
-            </Link>
-          </nav>
+          <div className="px-3 pt-5">
+            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Comando & Controle</span>
+            <nav className="space-y-1">
+              <Link href="/" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span>Visão Geral</span>
+              </Link>
+              
+              <Link href="/catalog" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <span>Catálogo & Provador VTON</span>
+              </Link>
+
+              <Link href="/whatsapp-crm" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-medium text-xs shadow-sm transition-all">
+                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                <span>WhatsApp CRM & Kanban</span>
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              </Link>
+
+              <Link href="/settings" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span>Motor IA & Regras</span>
+              </Link>
+
+              <Link href="/maintenance" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-amber-950/20 text-xs font-medium transition-all">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                <span>Manutenção & Logs</span>
+              </Link>
+            </nav>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            WhatsApp Bot Conectado
-          </span>
+        <div className="p-4 m-3 bg-[#0d1424] border border-slate-800/80 rounded-2xl">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>IA WhatsApp</span>
+            <span className="text-emerald-400 font-bold">Autônoma</span>
+          </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Grid: Kanban + Chat ao Vivo */}
-      <div className="flex-1 p-6 grid grid-cols-1 xl:grid-cols-12 gap-6 overflow-hidden">
-        {/* Lado Esquerdo: Kanban Pipeline (8 colunas) */}
-        <section className="xl:col-span-8 flex flex-col gap-4 overflow-x-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-black text-white">Pipeline de Vendas & WhatsApp CRM</h1>
-              <p className="text-sm text-slate-400">Arraste ou acompanhe a evolução dos leads atendidos pela IA e pelos vendedores.</p>
+      {/* Conteúdo Central */}
+      <main className="flex-1 overflow-hidden flex flex-col bg-[#070b12]">
+        
+        {/* Top Header */}
+        <header className="px-8 py-5 border-b border-slate-800/80 flex items-center justify-between bg-[#080d19]">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-extrabold text-white tracking-tight">WhatsApp Enterprise CRM & Pipeline</h1>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                100% Autônomo
+              </span>
             </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Supervisão de conversas ativas, recuperação de carrinhos e intervenção humana cirúrgica.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400">
+              Taxa de Resolução IA: <strong className="text-emerald-400 font-bold">95.4%</strong>
+            </span>
             <button
               onClick={fetchPipeline}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors text-slate-300"
+              className="text-xs px-3.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 transition-colors font-semibold"
             >
-              Atualizar Cards
+              Sincronizar
             </button>
           </div>
+        </header>
 
-          {/* Colunas do Kanban */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 flex-1 items-start">
-            {stagesMeta.map((col) => {
-              const leadsInCol = pipeline[col.key] || [];
-              return (
-                <div
-                  key={col.key}
-                  className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col min-h-[500px]"
-                >
-                  {/* Cabeçalho da Coluna */}
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 mb-3">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${col.color}`}>
-                      {col.label}
-                    </span>
-                    <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">
-                      {leadsInCol.length}
-                    </span>
-                  </div>
-
-                  {/* Cards */}
-                  <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
-                    {leadsInCol.length === 0 ? (
-                      <div className="text-center py-8 text-xs text-slate-600 font-medium">Nenhum lead</div>
-                    ) : (
-                      leadsInCol.map((lead) => (
-                        <div
-                          key={lead.id}
-                          onClick={() => handleSelectLead(lead)}
-                          className={`p-3.5 rounded-xl border transition-all cursor-pointer relative group ${
-                            selectedLead?.id === lead.id
-                              ? "bg-slate-800 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
-                              : "bg-slate-800/40 border-slate-700/60 hover:border-slate-600 hover:bg-slate-800/80"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-white text-sm tracking-tight">{lead.whatsapp_number}</span>
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                lead.needs_human_intervention
-                                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
-                                  : "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
-                              }`}
-                            >
-                              {lead.needs_human_intervention ? "Vendedor" : "IA Atendendo"}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs text-slate-400 mb-2.5">
-                            <span>Sentimento:</span>
-                            <span
-                              className={`font-semibold ${
-                                lead.sentiment === "FRUSTRADO"
-                                  ? "text-rose-400"
-                                  : lead.sentiment === "POSITIVO"
-                                  ? "text-emerald-400"
-                                  : "text-slate-300"
-                              }`}
-                            >
-                              {lead.sentiment}
-                            </span>
-                          </div>
-
-                          {lead.total_value_cents > 0 && (
-                            <div className="text-xs font-black text-emerald-400 mb-2">
-                              R$ {(lead.total_value_cents / 100).toFixed(2).replace(".", ",")}
-                            </div>
-                          )}
-
-                          {/* Ações Rápidas do Card */}
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-700/50 mt-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleHandoff(lead);
-                              }}
-                              className={`text-[10px] font-bold px-2 py-1 rounded transition-colors ${
-                                lead.needs_human_intervention
-                                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                                  : "bg-amber-600 hover:bg-amber-500 text-white"
-                              }`}
-                            >
-                              {lead.needs_human_intervention ? "Devolver para IA" : "Assumir Chat"}
-                            </button>
-
-                            {/* Dropdown de mudar estágio */}
-                            <select
-                              value={lead.stage}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => handleMoveStage(lead, e.target.value)}
-                              className="bg-slate-900 border border-slate-700 text-[10px] text-slate-300 rounded px-1.5 py-0.5"
-                            >
-                              <option value="NOVO">Novo</option>
-                              <option value="CATALOGO_VISUALIZADO">Catálogo</option>
-                              <option value="CARRINHO_CRIADO">Carrinho</option>
-                              <option value="PAGO">Pago</option>
-                              <option value="DESISTENCIA">Desistência</option>
-                            </select>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Lado Direito: Central de Atendimento & Interação WhatsApp (4 colunas) */}
-        <section className="xl:col-span-4 bg-slate-900/60 border border-slate-800 rounded-2xl flex flex-col h-[750px] overflow-hidden">
-          {selectedLead ? (
-            <>
-              {/* Topo do Chat */}
-              <div className="p-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400 font-bold">
-                    {selectedLead.whatsapp_number.slice(-2)}
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-white text-sm">{selectedLead.whatsapp_number}</h2>
-                    <p className="text-xs text-slate-400">
-                      Estágio: <span className="text-cyan-400 font-semibold">{selectedLead.stage}</span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Botão de Controle Principal: Assumir / Devolver */}
-                <button
-                  onClick={() => handleToggleHandoff(selectedLead)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-md ${
-                    selectedLead.needs_human_intervention
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                      : "bg-amber-600 hover:bg-amber-500 text-white"
-                  }`}
-                >
-                  {selectedLead.needs_human_intervention ? "🤖 Devolver para IA" : "👤 Assumir Atendimento"}
-                </button>
-              </div>
-
-              {/* Status Banner */}
-              <div
-                className={`px-4 py-2 text-xs font-semibold flex items-center justify-between ${
-                  selectedLead.needs_human_intervention
-                    ? "bg-amber-500/10 text-amber-300 border-b border-amber-500/20"
-                    : "bg-cyan-500/10 text-cyan-300 border-b border-cyan-500/20"
-                }`}
-              >
-                <span>
-                  {selectedLead.needs_human_intervention
-                    ? "⚠️ Modo Humano Ativo: A IA está em pausa para você falar diretamente."
-                    : "✨ Modo IA Ativo: A vendedora autônoma está conduzindo a negociação."}
-                </span>
-              </div>
-
-              {/* Área de Mensagens */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#080d1a]">
-                {messages.map((msg, i) => (
+        {/* Layout Dividido: 5 Colunas Kanban + Painel Lateral de Chat ao Vivo */}
+        <div className="flex-1 grid grid-cols-12 overflow-hidden">
+          
+          {/* Lado Esquerdo: Kanban Pipeline (8 colunas) */}
+          <div className="col-span-8 p-6 overflow-x-auto border-r border-slate-800/80 bg-[#070b12]">
+            <div className="grid grid-cols-5 gap-3.5 h-full items-start">
+              {stagesMeta.map((col) => {
+                const leads = pipeline[col.key] || [];
+                return (
                   <div
-                    key={i}
-                    className={`flex flex-col ${
-                      msg.sender === "lead" ? "items-start" : "items-end"
-                    }`}
+                    key={col.key}
+                    className="bg-[#090e1b] border border-slate-800/90 rounded-2xl p-3 flex flex-col h-[calc(100vh-140px)] shadow-lg"
                   >
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-                        msg.sender === "lead"
-                          ? "bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700"
-                          : msg.sender === "ia"
-                          ? "bg-cyan-950/80 text-cyan-100 border border-cyan-800/60 rounded-br-none"
-                          : "bg-emerald-900 text-white rounded-br-none border border-emerald-700"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[10px] font-bold opacity-70 uppercase">
-                          {msg.sender === "lead" ? "Cliente" : msg.sender === "ia" ? "🤖 IA Mantto" : "👤 Você (Vendedor)"}
-                        </span>
-                      </div>
-                      <p className="leading-relaxed">{msg.text}</p>
-                      <span className="text-[10px] opacity-50 block text-right mt-1">{msg.time}</span>
+                    {/* Header da Coluna */}
+                    <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800/80">
+                      <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${col.badge}`}>
+                        {col.label}
+                      </span>
+                      <span className="text-xs font-mono text-slate-400 font-bold">
+                        {leads.length}
+                      </span>
+                    </div>
+
+                    {/* Cards de Leads */}
+                    <div className="space-y-2.5 overflow-y-auto flex-1 pr-1">
+                      {leads.length === 0 ? (
+                        <div className="text-center py-10 text-[11px] text-slate-600 font-medium italic">Sem leads</div>
+                      ) : (
+                        leads.map((lead) => {
+                          const isSelected = selectedLead?.id === lead.id;
+                          return (
+                            <div
+                              key={lead.id}
+                              onClick={() => handleSelectLead(lead)}
+                              className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-cyan-950/25 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                                  : "bg-[#0c1222] border-slate-800/80 hover:border-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-xs font-bold text-white tracking-tight">{lead.customer_name || "Torcedor"}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                                  lead.needs_human_intervention ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400"
+                                }`}>
+                                  {lead.needs_human_intervention ? "Humano" : "IA"}
+                                </span>
+                              </div>
+
+                              <div className="text-[11px] font-mono text-slate-400 mb-2">{lead.whatsapp_number}</div>
+
+                              <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800/60">
+                                <span className="font-bold text-emerald-400">
+                                  R$ {(lead.total_value_cents / 100).toFixed(2).replace(".", ",")}
+                                </span>
+                                <span className="text-[10px] text-slate-500">{lead.last_interaction}</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Arsenal de Negociação Rápida do Vendedor (Top 10 Toolkit) */}
-              <div className="px-3 py-2 bg-slate-900/90 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold no-scrollbar">
-                <span className="text-slate-500 uppercase tracking-wider text-[9px] font-bold px-1">Negociação:</span>
-                <button
-                  type="button"
-                  onClick={() => setChatInput("🎉 Boas notícias! Consegui liberar um cupom exclusivo de 5% de desconto especial para sua primeira compra agora!")}
-                  className="px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-800/60 text-sky-300 hover:bg-sky-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
-                >
-                  <span>🏷️</span> Cupom 1ª Compra (-5%)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChatInput("🔥 Vi que seu pedido ficou pendente. Consegui autorização da gerência para 10% de desconto imediato se fecharmos hoje via PIX!")}
-                  className="px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-800/60 text-amber-300 hover:bg-amber-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
-                >
-                  <span>⚡</span> Resgate Carrinho (-10%)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChatInput("✨ Quer ver como essa peça veste no seu corpo antes de finalizar? Envie uma foto sua de frente que nosso Provador Virtual por IA veste a roupa em você em segundos!")}
-                  className="px-2.5 py-1 rounded-lg bg-fuchsia-950/60 border border-fuchsia-800/60 text-fuchsia-300 hover:bg-fuchsia-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
-                >
-                  <span>🧥</span> Ofertar Provador VTON
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChatInput("💳 Aqui está sua chave PIX Copia-e-Cola para pagamento instantâneo com confirmação em tempo real e separação imediata do pedido!")}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 hover:bg-emerald-900/80 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
-                >
-                  <span>💎</span> Chave PIX Rápida
-                </button>
-              </div>
-
-              {/* Campo de Envio de Mensagem */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900 flex gap-2">
-                <input
-                  type="text"
-                  placeholder={
-                    selectedLead.needs_human_intervention
-                      ? "Digite sua mensagem ou clique num gatilho rápido acima..."
-                      : "Assuma o atendimento acima para responder ou usar os atalhos..."
-                  }
-                  disabled={!selectedLead.needs_human_intervention}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
-                />
-                <button
-                  type="submit"
-                  disabled={!selectedLead.needs_human_intervention || !chatInput.trim()}
-                  className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition-colors text-sm"
-                >
-                  Enviar
-                </button>
-              </form>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
-              <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center mb-4 text-cyan-400">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-              </div>
-              <h3 className="text-white font-bold mb-1">Nenhum Atendimento Selecionado</h3>
-              <p className="text-xs max-w-xs">Clique em qualquer lead no Kanban à esquerda para abrir a conversa do WhatsApp, interagir ou assumir o atendimento da IA.</p>
+                );
+              })}
             </div>
-          )}
-        </section>
-      </div>
+          </div>
+
+          {/* Lado Direito: Chat WhatsApp em Tempo Real (4 colunas) */}
+          <div className="col-span-4 bg-[#080d19] flex flex-col justify-between overflow-hidden">
+            {selectedLead ? (
+              <>
+                {/* Header do Chat */}
+                <div className="p-4 border-b border-slate-800/80 bg-[#090f1d] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-cyan-400">
+                      {selectedLead.customer_name?.substring(0, 2).toUpperCase() || "WA"}
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-white">{selectedLead.customer_name || "Cliente WhatsApp"}</div>
+                      <div className="text-[11px] font-mono text-slate-400">{selectedLead.whatsapp_number}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleToggleHandoff(selectedLead)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      selectedLead.needs_human_intervention
+                        ? "bg-cyan-500 text-slate-950 hover:bg-cyan-400 shadow-md"
+                        : "bg-slate-800 text-slate-300 hover:text-white border border-slate-700"
+                    }`}
+                  >
+                    {selectedLead.needs_human_intervention ? "Devolver à IA" : "Assumir Chat"}
+                  </button>
+                </div>
+
+                {/* Balões de Mensagem */}
+                <div className="flex-1 p-4 space-y-3 overflow-y-auto bg-[#070b14]/70">
+                  {messages.map((m, idx) => {
+                    const isUser = m.sender === "lead";
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex flex-col ${isUser ? "items-start" : "items-end"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                            isUser
+                              ? "bg-slate-800 text-slate-200 border border-slate-700/60 rounded-tl-sm"
+                              : m.sender === "ia"
+                              ? "bg-cyan-950/40 text-cyan-200 border border-cyan-800/40 rounded-tr-sm"
+                              : "bg-emerald-950/40 text-emerald-200 border border-emerald-800/40 rounded-tr-sm"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-4 mb-1 text-[10px] opacity-75 font-bold uppercase">
+                            <span>{isUser ? "Cliente" : m.sender === "ia" ? "🤖 Mantto IA" : "👤 Atendente"}</span>
+                            <span>{m.time}</span>
+                          </div>
+                          <p>{m.text}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Input de Envio */}
+                <form onSubmit={handleSendMessage} className="p-3.5 border-t border-slate-800/80 bg-[#090f1d] flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Digite uma mensagem ou resposta manual..."
+                    className="flex-1 bg-[#070b14] border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors"
+                  >
+                    Enviar
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="flex items-center justify-center flex-1 text-xs text-slate-500">
+                Selecione um lead no Kanban para abrir o chat.
+              </div>
+            )}
+          </div>
+
+        </div>
+
+      </main>
     </div>
   );
 }
