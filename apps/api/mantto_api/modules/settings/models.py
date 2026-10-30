@@ -6,8 +6,11 @@ class SystemSettings(Base):
     __tablename__ = "system_settings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    admin_phone: Mapped[str] = mapped_column(String(50), nullable=True)
+    # Suporte a Dois Administradores via WhatsApp
+    admin_phone: Mapped[str] = mapped_column(String(50), nullable=True) # Admin Principal
+    admin_phone_secondary: Mapped[str] = mapped_column(String(50), nullable=True) # Segundo Admin
     admin_password: Mapped[str] = mapped_column(String(100), nullable=True)
+    
     llm_base_url: Mapped[str] = mapped_column(String(255), nullable=True)
     llm_api_key: Mapped[str] = mapped_column(String(255), nullable=True)
     llm_model: Mapped[str] = mapped_column(String(100), nullable=True)

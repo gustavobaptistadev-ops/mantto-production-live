@@ -9,6 +9,7 @@ router = APIRouter(prefix="/settings", tags=["Settings"])
 
 class SettingsUpdate(BaseModel):
     admin_phone: str | None = None
+    admin_phone_secondary: str | None = None
     admin_password: str | None = None
     llm_base_url: str | None = None
     llm_api_key: str | None = None

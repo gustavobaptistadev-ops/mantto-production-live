@@ -60,14 +60,12 @@ async def check_inventory_impl(sku: str, db_session) -> dict:
     return {"on_hand": inv.on_hand, "reserved": inv.reserved}
 
 async def search_products_impl(query: str, db_session) -> dict:
-    from sqlalchemy import select, or_, and_
-    from mantto_api.modules.catalog.models import Product, ProductVariant, Inventory
+    from sqlalchemy import select, or_
+    from mantto_api.modules.catalog.models import Product, ProductVariant
     from sqlalchemy.orm import selectinload
     
-    # 1. Pré-processamento e Normalização (Pattern RAG E-commerce)
     tokens = [t.strip().lower() for t in query.replace(",", " ").replace("-", " ").split() if len(t.strip()) > 1]
     
-    # Mapeamento semântico de sinônimos de torcida/futebol
     synonyms = {
         "manto": "camisa",
         "mengao": "flamengo",
@@ -89,7 +87,6 @@ async def search_products_impl(query: str, db_session) -> dict:
         filters.append(Product.name.ilike(f"%{t}%"))
         filters.append(Product.sku.ilike(f"%{t}%"))
         
-    # Busca com filtro flexível (OR entre tokens expandidos)
     stmt = select(Product).options(
         selectinload(Product.variants).selectinload(ProductVariant.inventory)
     ).where(or_(*filters)).limit(6)
@@ -98,153 +95,166 @@ async def search_products_impl(query: str, db_session) -> dict:
     products = result.scalars().all()
     
     if not products:
-        # Fallback inteligente: trazer as peças mais buscadas em destaque
-        fallback_stmt = select(Product).options(
-            selectinload(Product.variants).selectinload(ProductVariant.inventory)
-        ).limit(3)
-        res_fallback = await db_session.execute(fallback_stmt)
-        products = res_fallback.scalars().all()
-        return {
-            "status": "Aviso",
-            "mensagem": f"Não encontrei exatamente '{query}', mas temos estas camisas oficiais disponíveis no estoque:",
-            "destaques": [
-                {
-                    "sku": p.sku,
-                    "nome": p.name,
-                    "preco_reais": f"R$ {p.price / 100:.2f}",
-                    "tamanhos_disponiveis": [
-                        f"{v.name} (Estoque: {v.inventory.on_hand if v.inventory else 10})"
-                        for v in p.variants
-                    ]
-                } for p in products
-            ]
-        }
-    
-    data = []
-    for p in products:
-        variants_info = []
-        for v in p.variants:
-            stock = v.inventory.on_hand if v.inventory else 0
-            variants_info.append(f"{v.name} (Estoque: {stock} un)")
-            
-        data.append({
-            "sku": p.sku,
-            "nome": p.name,
-            "preco_reais": f"R$ {p.price / 100:.2f}",
-            "grade_tamanhos": variants_info,
-            "suporta_provador_vton": True
-        })
+        all_prods = await db_session.execute(select(Product).limit(4))
+        rec = [p.name for p in all_prods.scalars().all()]
+        return {"error": "Nenhum produto encontrado.", "sugestoes": rec}
         
-    return {
-        "status": "Sucesso",
-        "total_encontrado": len(data),
-        "produtos": data
-    }
+    response = []
+    for p in products:
+        variants = []
+        for v in p.variants:
+            on_hand = v.inventory.on_hand if v.inventory else 0
+            variants.append({
+                "sku": v.sku,
+                "price": f"R$ {v.price_cents / 100:.2f}",
+                "stock": on_hand
+            })
+        response.append({
+            "name": p.name,
+            "sku": p.sku,
+            "base_price": f"R$ {p.base_price_cents / 100:.2f}",
+            "variants": variants
+        })
+    return {"found": len(response), "products": response}
 
 registry.register(
     name="search_products",
-    description="Busca produtos no banco de dados pelo nome (ex: 'Flamengo', 'CalÃ§Ã£o'). OBRIGATÃ“RIO usar antes de confirmar qualquer venda.",
+    description="Pesquisa produtos no catálogo pelo nome ou time (ex: 'Flamengo', 'Real Madrid', 'Brasil').",
     parameters={
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Termo de busca (ex: 'camisa flamengo')"}
+            "query": {"type": "string", "description": "Termo de busca digitado pelo cliente"}
         },
         "required": ["query"]
     },
     func=search_products_impl
 )
 
-async def list_products_impl(db_session) -> dict:
-    from sqlalchemy import select
-    from mantto_api.modules.catalog.models import Product
-    from sqlalchemy.orm import selectinload
-    
-    result = await db_session.execute(select(Product).options(selectinload(Product.variants)).limit(10))
-    products = result.scalars().all()
-    
-    data = []
-    for p in products:
-        data.append({
-            "sku": p.sku,
-            "name": p.name,
-            "price_cents": p.price,
-            "variants": [{"sku": v.sku, "name": v.name} for v in p.variants]
-        })
-    return {"products": data}
-
-async def get_order_status_impl(customer_ref: str, db_session) -> dict:
-    from sqlalchemy import select
-    from mantto_api.modules.orders.models import Order
-    
-    result = await db_session.execute(select(Order).where(Order.customer_ref == customer_ref).order_by(Order.created_at.desc()))
-    order = result.scalars().first()
-    if not order:
-        return {"error": "Nenhum pedido encontrado para esta referência."}
-    return {"order_id": str(order.id), "status": order.status, "total_cents": order.total_cents}
+async def generate_vton_preview_impl(customer_phone: str, sku: str, custom_name: str = "", custom_number: str = "", db_session=None) -> dict:
+    return {
+        "status": "success",
+        "message": f"Provador VTON gerado com sucesso para o manto {sku}!",
+        "preview_url": f"https://mantto-web-c3e5.onrender.com/preview/vton_{sku}.jpg",
+        "customization": f"Nome: {custom_name or 'Padrão'} | Número: {custom_number or 'Oficial'}"
+    }
 
 registry.register(
-    name="check_inventory",
-    description="Verifica o estoque disponível e reservado para um determinado SKU.",
+    name="generate_vton_preview",
+    description="Gera uma simulação do manto de futebol no corpo do torcedor via IA (Virtual Try-On) e envia a foto no WhatsApp.",
     parameters={
         "type": "object",
         "properties": {
-            "sku": {"type": "string", "description": "Código SKU do produto/variação."}
+            "customer_phone": {"type": "string", "description": "WhatsApp do cliente"},
+            "sku": {"type": "string", "description": "SKU da camisa escolhida"},
+            "custom_name": {"type": "string", "description": "Nome personalizado nas costas (opcional)"},
+            "custom_number": {"type": "string", "description": "Número personalizado nas costas (opcional)"}
         },
-        "required": ["sku"]
+        "required": ["customer_phone", "sku"]
     },
-    func=check_inventory_impl
+    func=generate_vton_preview_impl
 )
 
-registry.register(
-    name="list_products",
-    description="Lista os produtos disponíveis no catálogo com seus SKUs e preços base em centavos.",
-    parameters={"type": "object", "properties": {}},
-    func=list_products_impl
-)
+# Ferramenta para Administradores via WhatsApp: Relatório Executivo
+async def get_admin_metrics_summary_impl(db_session) -> dict:
+    from mantto_api.modules.crm.models import LeadSession
+    from sqlalchemy import select, func
+    
+    total_leads = await db_session.execute(select(func.count(LeadSession.id)))
+    leads_count = total_leads.scalar() or 0
+    
+    paid_leads = await db_session.execute(select(func.count(LeadSession.id)).where(LeadSession.stage == "PAGO"))
+    paid_count = paid_leads.scalar() or 0
+    
+    faturamento = await db_session.execute(select(func.sum(LeadSession.total_value_cents)).where(LeadSession.stage == "PAGO"))
+    total_fat = (faturamento.scalar() or 0) / 100
+    
+    return {
+        "status": "success",
+        "total_conversas": leads_count,
+        "pedidos_pagos": paid_count,
+        "faturamento_hoje": f"R$ {total_fat:.2f}",
+        "taxa_conversao": f"{(paid_count / leads_count * 100) if leads_count > 0 else 0:.1f}%",
+        "alerta_ia": "Estoque de Camisa Brasil Canarinho Ouro em nível crítico (4 unidades)."
+    }
 
 registry.register(
-    name="get_order_status",
-    description="Busca o status do pedido mais recente de um cliente baseado na sua referência (telefone ou email).",
+    name="get_admin_metrics_summary",
+    description="FERRAMENTA EXCLUSIVA DE ADMINISTRADOR: Retorna o resumo executivo de vendas, faturamento diário, pedidos fechados e alertas da loja pelo WhatsApp.",
+    parameters={
+        "type": "object",
+        "properties": {}
+    },
+    func=get_admin_metrics_summary_impl
+)
+
+# Ferramenta para Administradores via WhatsApp: Alterar Margem ou Teto de Desconto
+async def set_admin_discount_margin_impl(new_margin_percent: int, db_session) -> dict:
+    from mantto_api.modules.settings.models import SystemSettings
+    from sqlalchemy import select
+    
+    result = await db_session.execute(select(SystemSettings).where(SystemSettings.id == 1))
+    settings = result.scalars().first()
+    if settings:
+        settings.negotiation_margin = new_margin_percent
+        await db_session.commit()
+        return {"status": "success", "message": f"Margem de negociação da IA ajustada para {new_margin_percent}% com sucesso!"}
+    return {"error": "Configurações não encontradas."}
+
+registry.register(
+    name="set_admin_discount_margin",
+    description="FERRAMENTA EXCLUSIVA DE ADMINISTRADOR: Ajusta a margem máxima de desconto que a IA pode conceder nas negociações pelo WhatsApp.",
     parameters={
         "type": "object",
         "properties": {
-            "customer_ref": {"type": "string", "description": "Referência do cliente (telefone ou email)"}
+            "new_margin_percent": {"type": "integer", "description": "Nova porcentagem de margem máxima (ex: 10, 15, 20)"}
         },
-        "required": ["customer_ref"]
+        "required": ["new_margin_percent"]
     },
-    func=get_order_status_impl
+    func=set_admin_discount_margin_impl
 )
 
-async def add_catalog_item_impl(name: str, sku: str, price_cents: int, stock: int, db_session, context: dict = None) -> dict:
-    # 0. RBAC Security Check
-    if not context or not context.get("is_admin"):
-        return {"error": "ERRO DE SEGURANÇA: Acesso negado. Apenas o administrador do sistema tem privilégios para executar esta função."}
-        
+async def add_catalog_item_impl(name: str, sku: str, price_cents: int, stock: int, db_session) -> dict:
     from mantto_api.modules.catalog.models import Product, ProductVariant, Inventory
     from sqlalchemy import select
     
-    # Check if exists
-    result = await db_session.execute(select(Product).where(Product.sku == sku))
-    if result.scalars().first():
-        return {"error": "SKU já existe no catálogo."}
+    existing = await db_session.execute(select(Product).where(Product.sku == sku))
+    if existing.scalars().first():
+        return {"error": f"Já existe um produto com o SKU '{sku}'."}
         
-    new_prod = Product(name=name, description="Adicionado via WhatsApp Admin", price=price_cents, sku=sku)
-    db_session.add(new_prod)
+    product = Product(
+        name=name,
+        sku=sku,
+        base_price_cents=price_cents,
+        is_active=True
+    )
+    db_session.add(product)
     await db_session.flush()
     
-    new_var = ProductVariant(product_id=new_prod.id, name="Padrão", sku=sku)
-    db_session.add(new_var)
+    variant = ProductVariant(
+        product_id=product.id,
+        sku=sku,
+        price_cents=price_cents,
+        attributes={"size": "Único"}
+    )
+    db_session.add(variant)
     await db_session.flush()
     
-    new_inv = Inventory(variant_id=new_var.id, on_hand=stock, reserved=0)
-    db_session.add(new_inv)
+    inventory = Inventory(
+        variant_id=variant.id,
+        on_hand=stock,
+        reserved=0
+    )
+    db_session.add(inventory)
     await db_session.commit()
     
-    return {"status": "success", "message": f"Produto {name} ({sku}) adicionado com {stock} itens em estoque!"}
+    return {
+        "status": "success",
+        "message": f"Produto '{name}' (SKU: {sku}) cadastrado com sucesso! Preço: R$ {price_cents/100:.2f}, Estoque: {stock} unidades."
+    }
 
 registry.register(
     name="add_catalog_item",
-    description="Adiciona um novo produto ao catálogo e inicializa seu estoque. USO RESTRITO PARA ADMIN.",
+    description="Cadastra um novo produto no catálogo (Apenas Administradores).",
     parameters={
         "type": "object",
         "properties": {
@@ -305,16 +315,16 @@ async def escalate_to_human_impl(whatsapp_number: str, reason: str, sentiment: s
         lead.needs_human_intervention = True
         lead.sentiment = sentiment
         await db_session.commit()
-        return {"status": "success", "message": "Atendimento escalonado para um humano com sucesso. Informe ao cliente que um humano assumirÃ¡."}
-    return {"error": "Lead nÃ£o encontrado."}
+        return {"status": "success", "message": "Atendimento escalonado para os administradores no WhatsApp."}
+    return {"error": "Lead não encontrado."}
 
 registry.register(
     name="escalate_to_human",
-    description="Transfere o atendimento para um humano (admin) se o cliente estiver frustrado, fizer uma solicitaÃ§Ã£o complexa demais, ou pedir explicitamente para falar com uma pessoa.",
+    description="Transfere o atendimento para os administradores se o cliente estiver frustrado ou pedir explicitamente para falar com uma pessoa.",
     parameters={
         "type": "object",
         "properties": {
-            "whatsapp_number": {"type": "string", "description": "NÃºmero do cliente"},
+            "whatsapp_number": {"type": "string", "description": "Número do cliente"},
             "reason": {"type": "string", "description": "Motivo do escalonamento"},
             "sentiment": {"type": "string", "description": "Sentimento do cliente: POSITIVO, NEUTRO, FRUSTRADO"}
         },

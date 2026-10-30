@@ -17,6 +17,8 @@ interface SettingsData {
   tone_of_voice: string;
   pix_key: string;
   pix_beneficiary: string;
+  admin_phone: string;
+  admin_phone_secondary: string;
 }
 
 export default function SettingsPage() {
@@ -33,6 +35,8 @@ export default function SettingsPage() {
     tone_of_voice: "consultivo",
     pix_key: "financeiro@mantto.com.br",
     pix_beneficiary: "Mantto Artigos Esportivos LTDA",
+    admin_phone: "5511999999999",
+    admin_phone_secondary: "5511988888888",
   });
 
   const [saving, setSaving] = useState(false);
@@ -51,6 +55,8 @@ export default function SettingsPage() {
             negotiation_margin: data.negotiation_margin ?? 15,
             first_attempt_discount: data.first_attempt_discount ?? 5,
             cart_rescue_discount: data.cart_rescue_discount ?? 10,
+            admin_phone: data.admin_phone || "5511999999999",
+            admin_phone_secondary: data.admin_phone_secondary || "5511988888888",
           }));
         }
       })
@@ -82,19 +88,17 @@ export default function SettingsPage() {
     }
   };
 
-  // Cálculo simulado de lucratividade líquida por camisa média de R$ 299,90
   const basePrice = 299.90;
-  const costPrice = 135.00; // Custo de produção/importação
-  const discountAmount = (basePrice * settings.negotiation_margin) / 100;
-  const finalPrice = basePrice - discountAmount;
-  const netMargin = finalPrice - costPrice;
+  const finalPrice = basePrice * (1 - settings.negotiation_margin / 100);
+  const cost = 120.00;
+  const netMargin = finalPrice - cost;
   const marginPercentage = ((netMargin / finalPrice) * 100).toFixed(1);
 
   return (
     <div className="flex h-screen bg-[#070b12] text-slate-100 overflow-hidden font-sans">
       
       {/* Sidebar Corporativa */}
-      <aside className="w-72 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between overflow-y-auto select-none">
+      <aside className="hidden md:flex w-72 bg-[#090e1a] border-r border-slate-800/80 flex-col justify-between overflow-y-auto select-none">
         <div>
           <div className="p-6 pb-5 border-b border-slate-800/60">
             <div className="flex items-center gap-3">
@@ -106,7 +110,7 @@ export default function SettingsPage() {
                   <span className="font-extrabold tracking-tight text-white text-base">MANTTO</span>
                   <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">AI</span>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium">Políticas & Cérebro LLM</p>
+                <p className="text-[11px] text-slate-500 font-medium">Políticas Comerciais</p>
               </div>
             </div>
           </div>
@@ -120,7 +124,7 @@ export default function SettingsPage() {
               </Link>
               
               <Link href="/catalog" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
                 <span>Catálogo & Provador VTON</span>
               </Link>
 
@@ -142,13 +146,6 @@ export default function SettingsPage() {
             </nav>
           </div>
         </div>
-
-        <div className="p-4 m-3 bg-[#0d1424] border border-slate-800/80 rounded-2xl">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>LLM Status</span>
-            <span className="text-cyan-400 font-bold">{settings.llm_model}</span>
-          </div>
-        </div>
       </aside>
 
       {/* Conteúdo Central */}
@@ -165,7 +162,7 @@ export default function SettingsPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Calibre a sensibilidade de descontos, comportamento da vendedora e integração financeira instantânea.
+                Calibre a sensibilidade de descontos, comportamento da vendedora e integração dos 2 números administradores no WhatsApp.
               </p>
             </div>
 
@@ -178,7 +175,7 @@ export default function SettingsPage() {
             </button>
           </header>
 
-          {/* Grid de 3 Colunas: Cérebro LLM (4 col) + Sliders de Margem (5 col) + Financeiro PIX (3 col) */}
+          {/* Grid de 3 Colunas: Cérebro LLM (4 col) + Sliders de Margem (5 col) + WhatsApp Admin & PIX (3 col) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             {/* Bloco 1: Parâmetros do Cérebro LLM (4 colunas) */}
@@ -293,7 +290,7 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings({ ...settings, cart_rescue_discount: parseInt(e.target.value) })}
                   className="w-full accent-fuchsia-400 cursor-pointer"
                 />
-                <p className="text-[11px] text-slate-400">Disparado automaticamente após 45 minutos de inatividade do cliente.</p>
+                <p className="text-[11px] text-slate-400">Disparado automaticamente após inatividade do cliente.</p>
               </div>
 
               {/* Simulação em Tempo Real */}
@@ -310,12 +307,44 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Bloco 3: Dados Financeiros & PIX (3 colunas) */}
+            {/* Bloco 3: WhatsApp dos 2 Administradores & PIX (3 colunas) */}
             <div className="lg:col-span-3 rounded-2xl bg-gradient-to-b from-[#0f172a]/80 to-[#0b1120]/90 border border-slate-800/80 p-5 shadow-xl space-y-4 flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="pb-3 border-b border-slate-800/80 flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">3. Recebimento PIX</span>
-                  <span className="text-emerald-400 font-bold text-xs">Ativo</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">3. Admins WhatsApp & PIX</span>
+                  <span className="text-emerald-400 font-bold text-xs">2 Conectados</span>
+                </div>
+
+                {/* Administrador Principal */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1 flex items-center justify-between">
+                    <span>👑 Admin Principal (WhatsApp)</span>
+                    <span className="text-[10px] text-emerald-400">Comando Total</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.admin_phone}
+                    onChange={(e) => setSettings({ ...settings, admin_phone: e.target.value })}
+                    placeholder="5511999999999"
+                    className="w-full bg-[#080d18] border border-cyan-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">Recebe alertas, relatórios e altera margem via IA.</span>
+                </div>
+
+                {/* Segundo Administrador */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1 flex items-center justify-between">
+                    <span>🛡️ 2º Admin (WhatsApp)</span>
+                    <span className="text-[10px] text-cyan-400">Supervisão</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.admin_phone_secondary}
+                    onChange={(e) => setSettings({ ...settings, admin_phone_secondary: e.target.value })}
+                    placeholder="5511988888888"
+                    className="w-full bg-[#080d18] border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">Segundo sócio/gerente com acesso executivo à IA.</span>
                 </div>
 
                 <div>
@@ -339,10 +368,10 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                    <span>✓</span> Validador de Comprovantes
+                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                    <span>🤖</span> Modo Administrador WhatsApp
                   </div>
-                  <p>O agente de IA lê o payload do PIX e altera o pedido para PAGO automaticamente no CRM.</p>
+                  <p>Qualquer um dos dois números pode mandar mensagens como <em>"Qual o faturamento de hoje?"</em> ou <em>"Mudar margem para 12%"</em> direto para a IA.</p>
                 </div>
               </div>
 
