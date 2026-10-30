@@ -1,7 +1,6 @@
 import uuid
-
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,18 +9,15 @@ from mantto_api.modules.auth.models import Tenant
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-
 class TenantCreate(BaseModel):
     name: str
 
 class TenantResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     is_active: bool
-
-    class Config:
-        from_attributes = True
-
 
 @router.post("/tenants", response_model=TenantResponse)
 async def create_tenant(tenant: TenantCreate, db: AsyncSession = Depends(get_db_session)):

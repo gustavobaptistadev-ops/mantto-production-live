@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mantto_api.database import get_db_session
 from mantto_api.modules.orders.models import Order, OrderItem
@@ -11,11 +11,10 @@ from mantto_api.modules.orders.models import Order, OrderItem
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 class OrderItemSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     sku: str
     quantity: int
-
-    class Config:
-        from_attributes = True
 
 class OrderCreate(BaseModel):
     tenant_id: uuid.UUID
@@ -25,13 +24,12 @@ class OrderCreate(BaseModel):
     channel: str | None = None
 
 class OrderResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     status: str
     customer_ref: str
     items: list[OrderItemSchema]
-
-    class Config:
-        from_attributes = True
 
 @router.post("", response_model=OrderResponse, status_code=201)
 async def create_order(
@@ -49,21 +47,39 @@ async def create_order(
         if existing_order:
             return existing_order
 
-    new_order = Order(
+    order = Order(
         tenant_id=payload.tenant_id,
         customer_ref=payload.customer_ref,
         shipping_address=payload.shipping_address,
         channel=payload.channel,
         idempotency_key=idempotency_key,
-        status="draft"
+        status="PENDING",
+        total_amount_cents=0
     )
-    
-    for item in payload.items:
-        new_order.items.append(OrderItem(sku=item.sku, quantity=item.quantity))
+    db.add(order)
+    await db.flush()
 
-    db.add(new_order)
+    for item in payload.items:
+        order_item = OrderItem(
+            order_id=order.id,
+            sku=item.sku,
+            quantity=item.quantity,
+            unit_price_cents=0,
+            subtotal_cents=0
+        )
+        db.add(order_item)
+
     await db.commit()
-    # Eager load the items relationship using an async query
-    result = await db.execute(select(Order).options(selectinload(Order.items)).where(Order.id == new_order.id))
-    new_order = result.scalars().first()
-    return new_order
+    
+    # Reload items
+    res = await db.execute(
+        select(Order)
+        .options(selectinload(Order.items))
+        .where(Order.id == order.id)
+    )
+    return res.scalars().first()
+
+@router.get("", response_model=list[OrderResponse])
+async def list_orders(db: AsyncSession = Depends(get_db_session)):
+    result = await db.execute(select(Order).options(selectinload(Order.items)).limit(50))
+    return result.scalars().all()
