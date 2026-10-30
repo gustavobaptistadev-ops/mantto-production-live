@@ -9,8 +9,12 @@ class LeadSession(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "lead_sessions"
 
     whatsapp_number: Mapped[str] = mapped_column(String(50), index=True, unique=True)
+    customer_name: Mapped[str | None] = mapped_column(String(100), nullable=True) # Nome capturado pela IA
+    favorite_club: Mapped[str | None] = mapped_column(String(100), nullable=True) # Time do coração detectado
+    preferred_size: Mapped[str | None] = mapped_column(String(10), nullable=True) # Tamanho preferido (P, M, G, GG)
+    
     stage: Mapped[str] = mapped_column(String(50), default="NOVO") 
-    # NOVO, CATALOGO_VISUALIZADO, CARRINHO_CRIADO, PAGO, DESISTENCIA
+    # NOVO, CATALOGO_VISUALIZADO, VTON_PROVADO, CARRINHO_CRIADO, PAGO, DESISTENCIA
     
     last_interaction: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     abandoned_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

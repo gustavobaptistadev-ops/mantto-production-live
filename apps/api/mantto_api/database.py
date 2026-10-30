@@ -14,13 +14,15 @@ engine_kwargs: dict = {}
 if is_sqlite:
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
-    # Garantir driver assíncrono asyncpg para PostgreSQL em nuvem
-    if db_url.startswith("postgresql://"):
+    # Garantir driver assíncrono asyncpg para PostgreSQL
+    if "postgresql+psycopg" in db_url:
+        db_url = db_url.replace("postgresql+psycopg://", "postgresql+asyncpg://")
+    elif db_url.startswith("postgresql://"):
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
-    # Configurações de resiliência e pool para Postgres Render / AWS / Supabase
+    # Configurações de resiliência e pool para Postgres Render / AWS / Supabase / Local
     engine_kwargs["pool_pre_ping"] = True
     engine_kwargs["pool_recycle"] = 300
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from mantto_api.database import get_db_session
-from mantto_api.modules.crm.models import LeadSession
+from mantto_api.modules.crm.models import LeadSession, ChatMessage
 
 router = APIRouter(prefix="/crm", tags=["CRM & Pipeline"])
 
@@ -27,6 +27,7 @@ async def get_pipeline_leads(db: AsyncSession = Depends(get_db_session)):
     stages = {
         "NOVO": [],
         "CATALOGO_VISUALIZADO": [],
+        "VTON_PROVADO": [],
         "CARRINHO_CRIADO": [],
         "PAGO": [],
         "DESISTENCIA": []
@@ -36,6 +37,9 @@ async def get_pipeline_leads(db: AsyncSession = Depends(get_db_session)):
         lead_dict = {
             "id": str(lead.id),
             "whatsapp_number": lead.whatsapp_number,
+            "customer_name": lead.customer_name or "Torcedor",
+            "favorite_club": lead.favorite_club or "N/D",
+            "preferred_size": lead.preferred_size or "M",
             "stage": lead.stage,
             "sentiment": lead.sentiment,
             "needs_human_intervention": lead.needs_human_intervention,
@@ -55,7 +59,6 @@ async def toggle_human_handoff(payload: ToggleHandoffRequest, db: AsyncSession =
     result = await db.execute(select(LeadSession).where(LeadSession.whatsapp_number == payload.whatsapp_number))
     lead = result.scalars().first()
     if not lead:
-        # Se o lead não existir, cria um novo
         lead = LeadSession(
             whatsapp_number=payload.whatsapp_number,
             needs_human_intervention=payload.take_over
@@ -63,15 +66,18 @@ async def toggle_human_handoff(payload: ToggleHandoffRequest, db: AsyncSession =
         db.add(lead)
     else:
         lead.needs_human_intervention = payload.take_over
-        lead.last_interaction = datetime.utcnow()
         
     await db.commit()
-    status_label = "Humano assumiu o atendimento" if payload.take_over else "Atendimento devolvido com sucesso para a IA"
-    return {"status": "ok", "message": status_label, "needs_human_intervention": lead.needs_human_intervention}
+    status_str = "HUMANO (Assumido)" if payload.take_over else "IA (Automático)"
+    return {
+        "status": "success",
+        "whatsapp_number": payload.whatsapp_number,
+        "controlled_by": status_str
+    }
 
-@router.post("/move-stage")
+@router.post("/stage")
 async def move_lead_stage(payload: MoveStageRequest, db: AsyncSession = Depends(get_db_session)):
-    """Move um card manualmente no Kanban."""
+    """Move manualmente o lead entre os estágios do funil."""
     result = await db.execute(select(LeadSession).where(LeadSession.whatsapp_number == payload.whatsapp_number))
     lead = result.scalars().first()
     if not lead:
@@ -80,71 +86,26 @@ async def move_lead_stage(payload: MoveStageRequest, db: AsyncSession = Depends(
     lead.stage = payload.new_stage
     lead.last_interaction = datetime.utcnow()
     await db.commit()
-    return {"status": "ok", "new_stage": lead.stage}
+    return {"status": "success", "new_stage": payload.new_stage}
 
-class ResetConversationRequest(BaseModel):
-    whatsapp_number: str
-
-@router.post("/reset-conversation")
-async def reset_conversation(payload: ResetConversationRequest, db: AsyncSession = Depends(get_db_session)):
-    """Zera o histórico de conversas e reseta a sessão do lead no banco de dados."""
-    from mantto_api.modules.crm.models import ChatMessage
-    from sqlalchemy import delete
-    
-    clean_number = "".join(filter(str.isdigit, payload.whatsapp_number))
-    
-    # 1. Apaga todas as mensagens salvas daquele número
-    await db.execute(
-        delete(ChatMessage).where(
-            (ChatMessage.whatsapp_number == payload.whatsapp_number) | 
-            (ChatMessage.whatsapp_number == clean_number)
-        )
-    )
-    
-    # 2. Reseta o LeadSession para o estágio NOVO e devolve para IA
-    result = await db.execute(
-        select(LeadSession).where(
-            (LeadSession.whatsapp_number == payload.whatsapp_number) | 
-            (LeadSession.whatsapp_number == clean_number)
-        )
-    )
-    lead = result.scalars().first()
-    if lead:
-        lead.stage = "NOVO"
-        lead.needs_human_intervention = False
-        lead.total_value_cents = 0
-        lead.sentiment = "NEUTRO"
-        lead.last_interaction = datetime.utcnow()
-        
-    await db.commit()
-    return {
-        "status": "ok",
-        "message": f"Conversas e sessão do WhatsApp {payload.whatsapp_number} foram totalmente zeradas com sucesso!"
-    }
-
-@router.get("/conversations/{whatsapp_number}")
-async def get_lead_conversation(whatsapp_number: str, db: AsyncSession = Depends(get_db_session)):
-    """Retorna as mensagens salvas no banco de dados para o número especificado."""
-    from mantto_api.modules.crm.models import ChatMessage
-    clean_number = "".join(filter(str.isdigit, whatsapp_number))
-    
-    stmt = (
+@router.get("/chat-history/{whatsapp_number}")
+async def get_chat_history(whatsapp_number: str, db: AsyncSession = Depends(get_db_session)):
+    """Retorna as mensagens em ordem cronológica para exibição no chat lateral do CRM."""
+    query = (
         select(ChatMessage)
-        .where((ChatMessage.whatsapp_number == whatsapp_number) | (ChatMessage.whatsapp_number == clean_number))
+        .where(ChatMessage.whatsapp_number == whatsapp_number)
         .order_by(ChatMessage.created_at.asc())
+        .limit(50)
     )
-    res = await db.execute(stmt)
-    msgs = res.scalars().all()
+    result = await db.execute(query)
+    messages = result.scalars().all()
     
-    return {
-        "whatsapp_number": whatsapp_number,
-        "total_messages": len(msgs),
-        "messages": [
-            {
-                "id": str(m.id),
-                "role": m.role,
-                "content": m.content,
-                "created_at": m.created_at.isoformat() if m.created_at else None
-            } for m in msgs
-        ]
-    }
+    return [
+        {
+            "id": str(m.id),
+            "role": m.role,
+            "content": m.content,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        }
+        for m in messages
+    ]

@@ -13,11 +13,14 @@ interface Lead {
   total_value_cents: number;
   last_interaction: string;
   customer_name?: string;
+  favorite_club?: string;
+  preferred_size?: string;
 }
 
 interface PipelineData {
   NOVO: Lead[];
   CATALOGO_VISUALIZADO: Lead[];
+  VTON_PROVADO: Lead[];
   CARRINHO_CRIADO: Lead[];
   PAGO: Lead[];
   DESISTENCIA: Lead[];
@@ -30,6 +33,8 @@ export default function WhatsAppCRMPage() {
         id: "lead-1",
         whatsapp_number: "+55 11 98842-1920",
         customer_name: "Lucas Ferreira",
+        favorite_club: "Flamengo",
+        preferred_size: "G",
         stage: "NOVO",
         sentiment: "POSITIVO",
         needs_human_intervention: false,
@@ -42,6 +47,8 @@ export default function WhatsAppCRMPage() {
         id: "lead-2",
         whatsapp_number: "+55 21 97230-4411",
         customer_name: "Matheus Silva",
+        favorite_club: "Real Madrid",
+        preferred_size: "M",
         stage: "CATALOGO_VISUALIZADO",
         sentiment: "POSITIVO",
         needs_human_intervention: false,
@@ -49,11 +56,27 @@ export default function WhatsAppCRMPage() {
         last_interaction: "Há 12 min",
       },
     ],
+    VTON_PROVADO: [
+      {
+        id: "lead-vton-1",
+        whatsapp_number: "+55 11 97711-2233",
+        customer_name: "Guilherme Costa",
+        favorite_club: "Corinthians",
+        preferred_size: "GG",
+        stage: "VTON_PROVADO",
+        sentiment: "POSITIVO",
+        needs_human_intervention: false,
+        total_value_cents: 28990,
+        last_interaction: "Há 8 min",
+      },
+    ],
     CARRINHO_CRIADO: [
       {
         id: "lead-3",
         whatsapp_number: "+55 31 99182-3301",
         customer_name: "Gabriel Santos",
+        favorite_club: "Brasil",
+        preferred_size: "G",
         stage: "CARRINHO_CRIADO",
         sentiment: "NEUTRO",
         needs_human_intervention: false,
@@ -66,6 +89,8 @@ export default function WhatsAppCRMPage() {
         id: "lead-4",
         whatsapp_number: "+55 41 98450-9900",
         customer_name: "Rafael Oliveira",
+        favorite_club: "Flamengo",
+        preferred_size: "M",
         stage: "PAGO",
         sentiment: "POSITIVO",
         needs_human_intervention: false,
@@ -78,6 +103,8 @@ export default function WhatsAppCRMPage() {
         id: "lead-5",
         whatsapp_number: "+55 81 99321-4455",
         customer_name: "Diego Lima",
+        favorite_club: "São Paulo",
+        preferred_size: "P",
         stage: "DESISTENCIA",
         sentiment: "FRUSTRADO",
         needs_human_intervention: true,
@@ -91,7 +118,6 @@ export default function WhatsAppCRMPage() {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<{ sender: "lead" | "agent" | "ia"; text: string; time: string }[]>([]);
 
-  // Carregar dados reais do backend
   const fetchPipeline = async () => {
     try {
       const apiUrl = getApiUrl();
@@ -103,7 +129,7 @@ export default function WhatsAppCRMPage() {
         }
       }
     } catch {
-      // Mantém os dados corporativos em exibição contínua
+      // Fallback
     }
   };
 
@@ -113,7 +139,6 @@ export default function WhatsAppCRMPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Seleciona o primeiro lead por padrão
   useEffect(() => {
     if (!selectedLead && pipeline.NOVO.length > 0) {
       handleSelectLead(pipeline.NOVO[0]);
@@ -148,22 +173,22 @@ export default function WhatsAppCRMPage() {
     setMessages([
       {
         sender: "lead",
-        text: `Olá! Vocês ainda têm a Camisa Flamengo 2026 tamanho G em estoque?`,
+        text: `Olá! Vocês têm a Camisa ${lead.favorite_club || "do time"} tamanho ${lead.preferred_size || "M"} disponível?`,
         time: "10:14",
       },
       {
         sender: "ia",
-        text: `Fala, ${lead.customer_name || "amigo"}! Tudo bem? Temos sim! Restam poucas unidades no tamanho G. O envio é imediato com frete grátis via Sedex. Deseja que eu gere o provador virtual ou o código PIX de fechamento?`,
+        text: `Fala, ${lead.customer_name || "parceiro"}! Tudo bem? Temos sim a pronta entrega! Acabei de enviar uma simulação no seu tamanho pelo provador virtual. O frete é expresso e se fechar via PIX agora te dou envio prioritário hoje mesmo!`,
         time: "10:14",
       },
       {
         sender: "lead",
-        text: `Consegue me enviar uma foto de como fica no corpo antes de eu fechar?`,
+        text: `Top demais! Como faço pra pagar no PIX com chave copia e cola?`,
         time: "10:15",
       },
       {
         sender: "ia",
-        text: `Com certeza! Enviei aqui a imagem renderizada com o manto titular no seu perfil. Ficou sensacional! Gerando seu PIX com 5% de primeira compra...`,
+        text: `Aqui está a sua chave PIX: financeiro@mantto.com.br (MANTTO ESPORTES). Assim que fizer o PIX, a IA valida seu comprovante automaticamente e já separa o manto!`,
         time: "10:15",
       },
     ]);
@@ -171,7 +196,7 @@ export default function WhatsAppCRMPage() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim() || !selectedLead) return;
+    if (!chatInput.trim()) return;
 
     setMessages((prev) => [
       ...prev,
@@ -184,19 +209,20 @@ export default function WhatsAppCRMPage() {
     setChatInput("");
   };
 
-  const stagesMeta: { key: keyof PipelineData; label: string; badge: string; color: string }[] = [
-    { key: "NOVO", label: "Novos Contatos", badge: "bg-sky-500/10 text-sky-400 border-sky-500/30", color: "border-sky-500/30" },
-    { key: "CATALOGO_VISUALIZADO", label: "Catálogo / VTON", badge: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30", color: "border-indigo-500/30" },
-    { key: "CARRINHO_CRIADO", label: "Negociação Ativa", badge: "bg-amber-500/10 text-amber-400 border-amber-500/30", color: "border-amber-500/30" },
-    { key: "PAGO", label: "Venda Fechada (PIX)", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30", color: "border-emerald-500/30" },
-    { key: "DESISTENCIA", label: "Repescagem IA", badge: "bg-rose-500/10 text-rose-400 border-rose-500/30", color: "border-rose-500/30" },
+  const stagesMeta: { key: keyof PipelineData; label: string; badge: string }[] = [
+    { key: "NOVO", label: "Novo Lead", badge: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+    { key: "CATALOGO_VISUALIZADO", label: "Catálogo", badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30" },
+    { key: "VTON_PROVADO", label: "VTON Provado", badge: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30" },
+    { key: "CARRINHO_CRIADO", label: "Carrinho", badge: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+    { key: "PAGO", label: "PIX Pago", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+    { key: "DESISTENCIA", label: "Resgate", badge: "bg-rose-500/10 text-rose-400 border-rose-500/30" },
   ];
 
   return (
     <div className="flex h-screen bg-[#070b12] text-slate-100 overflow-hidden font-sans">
       
       {/* Sidebar Corporativa */}
-      <aside className="w-72 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between overflow-y-auto select-none">
+      <aside className="hidden md:flex w-72 bg-[#090e1a] border-r border-slate-800/80 flex-col justify-between overflow-y-auto select-none">
         <div>
           <div className="p-6 pb-5 border-b border-slate-800/60">
             <div className="flex items-center gap-3">
@@ -222,7 +248,7 @@ export default function WhatsAppCRMPage() {
               </Link>
               
               <Link href="/catalog" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-xs font-medium transition-all">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
                 <span>Catálogo & Provador VTON</span>
               </Link>
 
@@ -248,7 +274,10 @@ export default function WhatsAppCRMPage() {
         <div className="p-4 m-3 bg-[#0d1424] border border-slate-800/80 rounded-2xl">
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span>IA WhatsApp</span>
-            <span className="text-emerald-400 font-bold">Autônoma</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              95.4% Autônoma
+            </span>
           </div>
         </div>
       </aside>
@@ -262,11 +291,11 @@ export default function WhatsAppCRMPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-extrabold text-white tracking-tight">WhatsApp Enterprise CRM & Pipeline</h1>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                100% Autônomo
+                Live Omni-Channel
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Supervisão de conversas ativas, recuperação de carrinhos e intervenção humana cirúrgica.
+              Supervisão de conversas ativas, rastreamento de provadores VTON e intervenção dos administradores em tempo real.
             </p>
           </div>
 
@@ -283,22 +312,22 @@ export default function WhatsAppCRMPage() {
           </div>
         </header>
 
-        {/* Layout Dividido: 5 Colunas Kanban + Painel Lateral de Chat ao Vivo */}
+        {/* Layout Dividido: 6 Colunas Kanban + Painel Lateral de Chat ao Vivo */}
         <div className="flex-1 grid grid-cols-12 overflow-hidden">
           
           {/* Lado Esquerdo: Kanban Pipeline (8 colunas) */}
           <div className="col-span-8 p-6 overflow-x-auto border-r border-slate-800/80 bg-[#070b12]">
-            <div className="grid grid-cols-5 gap-3.5 h-full items-start">
+            <div className="grid grid-cols-6 gap-3 h-full items-start min-w-[850px]">
               {stagesMeta.map((col) => {
                 const leads = pipeline[col.key] || [];
                 return (
                   <div
                     key={col.key}
-                    className="bg-[#090e1b] border border-slate-800/90 rounded-2xl p-3 flex flex-col h-[calc(100vh-140px)] shadow-lg"
+                    className="bg-[#090e1b] border border-slate-800/90 rounded-2xl p-2.5 flex flex-col h-[calc(100vh-140px)] shadow-lg"
                   >
                     {/* Header da Coluna */}
-                    <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800/80">
-                      <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${col.badge}`}>
+                    <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800/80">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${col.badge}`}>
                         {col.label}
                       </span>
                       <span className="text-xs font-mono text-slate-400 font-bold">
@@ -319,20 +348,25 @@ export default function WhatsAppCRMPage() {
                               onClick={() => handleSelectLead(lead)}
                               className={`p-3 rounded-xl border transition-all cursor-pointer ${
                                 isSelected
-                                  ? "bg-cyan-950/25 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                                  ? "bg-cyan-950/25 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/30"
                                   : "bg-[#0c1222] border-slate-800/80 hover:border-slate-700"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-xs font-bold text-white tracking-tight">{lead.customer_name || "Torcedor"}</span>
-                                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                                <span className="text-xs font-bold text-white tracking-tight truncate max-w-[100px]">{lead.customer_name || "Torcedor"}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                                   lead.needs_human_intervention ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400"
                                 }`}>
                                   {lead.needs_human_intervention ? "Humano" : "IA"}
                                 </span>
                               </div>
 
-                              <div className="text-[11px] font-mono text-slate-400 mb-2">{lead.whatsapp_number}</div>
+                              <div className="flex items-center justify-between text-[10px] text-cyan-400 font-medium mb-1">
+                                <span>⚽ {lead.favorite_club || "Geral"}</span>
+                                <span className="bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-mono">{lead.preferred_size || "M"}</span>
+                              </div>
+
+                              <div className="text-[10px] font-mono text-slate-400 mb-2 truncate">{lead.whatsapp_number}</div>
 
                               <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800/60">
                                 <span className="font-bold text-emerald-400">
@@ -362,7 +396,14 @@ export default function WhatsAppCRMPage() {
                       {selectedLead.customer_name?.substring(0, 2).toUpperCase() || "WA"}
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-white">{selectedLead.customer_name || "Cliente WhatsApp"}</div>
+                      <div className="font-bold text-sm text-white flex items-center gap-2">
+                        <span>{selectedLead.customer_name || "Cliente WhatsApp"}</span>
+                        {selectedLead.favorite_club && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
+                            {selectedLead.favorite_club}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[11px] font-mono text-slate-400">{selectedLead.whatsapp_number}</div>
                     </div>
                   </div>
