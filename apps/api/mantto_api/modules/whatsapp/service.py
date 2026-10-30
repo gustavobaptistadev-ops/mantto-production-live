@@ -1,11 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from mantto_api.modules.settings.models import SystemSettings
+from mantto_api.modules.crm.models import LeadSession
+import re
 
 async def process_incoming_whatsapp_message(from_number: str, text_body: str, db: AsyncSession) -> dict:
-    """Processa a lógica de negócios da mensagem recebida pelo WhatsApp, incluindo os dois administradores."""
+    """Processa a lógica de negócios da mensagem recebida pelo WhatsApp, incluindo os dois administradores e o CRM neural."""
     
-    # 0. Check SystemSettings for Admin Phones (Suporte a 2 Administradores)
+    # 0. Carregar configurações do sistema
     result = await db.execute(select(SystemSettings).where(SystemSettings.id == 1))
     settings = result.scalars().first()
     
@@ -31,7 +33,8 @@ async def process_incoming_whatsapp_message(from_number: str, text_body: str, db
             f"1. Relatório em tempo real: Chame 'get_admin_metrics_summary' quando ele pedir resumo, vendas ou faturamento.\n"
             f"2. Ajuste de margem de desconto: Chame 'set_admin_discount_margin' se ele mandar alterar margem ou teto.\n"
             f"3. Gerenciar catálogo e estoque: Chame 'add_catalog_item' se ele mandar cadastrar camisa ou ver estoque.\n"
-            f"4. Responder de forma executiva, objetiva, profissional e respeitosa (ex: 'Olá, Administrador! Aqui está o resumo das operações de hoje:')."
+            f"4. Alertas de Segurança: Se qualquer lead solicitar intervenção humana, avise o administrador imediatamente.\n"
+            f"5. Responder sempre de forma executiva, objetiva e com dados consolidados."
         )
         return {
             "sys_prompt": admin_prompt,
@@ -39,13 +42,49 @@ async def process_incoming_whatsapp_message(from_number: str, text_body: str, db
             "fast_reply": None
         }
 
+    # === ATUALIZAÇÃO NEURAL AUTOMÁTICA DO LEAD NO BANCO ===
+    lead_res = await db.execute(select(LeadSession).where(LeadSession.whatsapp_number == from_number))
+    lead = lead_res.scalars().first()
+    if not lead:
+        lead = LeadSession(whatsapp_number=from_number, stage="NOVO")
+        db.add(lead)
+        await db.flush()
+
+    # Detecção automática de time do coração
+    clubs_keywords = {
+        "flamengo": "Flamengo", "mengao": "Flamengo", "fla": "Flamengo",
+        "corinthians": "Corinthians", "timao": "Corinthians",
+        "palmeiras": "Palmeiras", "verdao": "Palmeiras",
+        "sao paulo": "São Paulo", "tricolor": "São Paulo",
+        "real madrid": "Real Madrid", "barcelona": "Barcelona",
+        "brasil": "Brasil", "selecao": "Brasil"
+    }
+    lowered = text_body.lower()
+    for kw, club in clubs_keywords.items():
+        if kw in lowered:
+            lead.favorite_club = club
+            break
+
+    # Detecção automática de tamanho
+    sizes = ["p", "m", "g", "gg"]
+    for s in sizes:
+        if re.search(rf"\b(tamanho|tam)?\s*{s}\b", lowered):
+            lead.preferred_size = s.upper()
+            break
+
+    # Se o cliente enviou comprovante ou código de PIX
+    if "comprovante" in lowered or "paguei" in lowered or "pix feito" in lowered:
+        lead.stage = "PAGO"
+
+    await db.commit()
+
     # === PROTOCOLO CLIENTE / TORCEDOR ===
     human_mimicry_protocol = (
         "DIRETRIZ DE IDENTIDADE ABSOLUTA: Você não é uma Inteligência Artificial, nem um assistente virtual robótico. "
         f"Você é um(a) especialista em mantos e camisas de futebol da loja {store_name}. "
         "REGRA 1 (Formatação): HUMANOS NÃO FALAM EM TÓPICOS. Jamais envie listas numeradas longas ou blocos formais. "
         "REGRA 2 (Naturalidade): Suas mensagens devem ser curtas, diretas, ágeis e vibrantes, no ritmo do torcedor de futebol. "
-        "REGRA 3 (Provador VTON): Se o cliente mandar uma foto ou pedir para ver como fica nele, mencione nosso Provador Virtual Neural e chame 'generate_vton_preview'. "
+        "REGRA 3 (Provador VTON): Se o cliente mandar uma foto ou pedir para ver como fica nele, chame 'generate_vton_preview' e avise com entusiasmo. "
         "REGRA 4 (Proibição): Sob nenhuma hipótese peça desculpas de forma robótica ('Sinto muito por não entender'). Aja como vendedor de verdade."
     )
     
@@ -66,7 +105,9 @@ async def process_incoming_whatsapp_message(from_number: str, text_body: str, db
         "antes de finalizar, sugira casualmente o calção oficial do mesmo clube ou meião para fechar o kit completo."
     )
 
-    sys_prompt = f"{human_mimicry_protocol}{anti_hallucination_protocol}\n\n{cross_sell_prompt}"
+    context_lead_info = f"\n\nCONTEXTO DO CLIENTE ATUAL: Time detectado: {lead.favorite_club or 'Ainda não identificado'}. Tamanho preferido: {lead.preferred_size or 'M'}. Estágio: {lead.stage}."
+
+    sys_prompt = f"{human_mimicry_protocol}{anti_hallucination_protocol}{cross_sell_prompt}{context_lead_info}"
     
     if settings:
         sys_prompt += f"\n\nMARGEM DE NEGOCIAÇÃO: Tente vender preço cheio. Se o cliente insistir muito em desconto ou frete, você tem autorização para conceder até {settings.negotiation_margin}%."

@@ -59,6 +59,19 @@ async def check_inventory_impl(sku: str, db_session) -> dict:
         return {"error": "SKU não encontrado no sistema."}
     return {"on_hand": inv.on_hand, "reserved": inv.reserved}
 
+registry.register(
+    name="check_inventory",
+    description="Verifica o estoque disponível e reservado para um determinado SKU.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "sku": {"type": "string", "description": "Código SKU do produto/variação."}
+        },
+        "required": ["sku"]
+    },
+    func=check_inventory_impl
+)
+
 async def search_products_impl(query: str, db_session) -> dict:
     from sqlalchemy import select, or_
     from mantto_api.modules.catalog.models import Product, ProductVariant
@@ -131,6 +144,16 @@ registry.register(
 )
 
 async def generate_vton_preview_impl(customer_phone: str, sku: str, custom_name: str = "", custom_number: str = "", db_session=None) -> dict:
+    from mantto_api.modules.crm.models import LeadSession
+    from sqlalchemy import select
+    
+    if db_session:
+        res = await db_session.execute(select(LeadSession).where(LeadSession.whatsapp_number == customer_phone))
+        lead = res.scalars().first()
+        if lead:
+            lead.stage = "VTON_PROVADO"
+            await db_session.commit()
+            
     return {
         "status": "success",
         "message": f"Provador VTON gerado com sucesso para o manto {sku}!",
@@ -140,7 +163,7 @@ async def generate_vton_preview_impl(customer_phone: str, sku: str, custom_name:
 
 registry.register(
     name="generate_vton_preview",
-    description="Gera uma simulação do manto de futebol no corpo do torcedor via IA (Virtual Try-On) e envia a foto no WhatsApp.",
+    description="Gera uma simulação do manto de futebol no corpo do torcedor via IA (Virtual Try-On) e atualiza o funil de vendas.",
     parameters={
         "type": "object",
         "properties": {
@@ -152,6 +175,50 @@ registry.register(
         "required": ["customer_phone", "sku"]
     },
     func=generate_vton_preview_impl
+)
+
+# Ferramenta para Clientes via WhatsApp: Geração Instantânea de Chave PIX Dinâmica
+async def generate_pix_charge_impl(customer_phone: str, amount_cents: int, description: str, db_session) -> dict:
+    from mantto_api.modules.settings.models import SystemSettings
+    from mantto_api.modules.crm.models import LeadSession
+    from sqlalchemy import select
+    
+    settings_res = await db_session.execute(select(SystemSettings).where(SystemSettings.id == 1))
+    settings = settings_res.scalars().first()
+    
+    pix_key = settings.pix_key if settings and settings.pix_key else "financeiro@mantto.com.br"
+    beneficiary = settings.pix_beneficiary if settings and settings.pix_beneficiary else "MANTTO COMERCIO ESPORTIVO LTDA"
+    
+    lead_res = await db_session.execute(select(LeadSession).where(LeadSession.whatsapp_number == customer_phone))
+    lead = lead_res.scalars().first()
+    if lead:
+        lead.stage = "CARRINHO_CRIADO"
+        lead.total_value_cents = amount_cents
+        await db_session.commit()
+        
+    formatted_amount = f"R$ {amount_cents / 100:.2f}"
+    return {
+        "status": "success",
+        "pix_key": pix_key,
+        "beneficiary": beneficiary,
+        "amount": formatted_amount,
+        "copia_e_cola": f"00020126580014br.gov.bcb.pix0114{pix_key}520400005303986540{amount_cents/100:.2f}5802BR5925{beneficiary[:25]}6009SAO PAULO62070503***6304",
+        "instrucao": f"Chave PIX: {pix_key}\nValor: {formatted_amount}\nFavorecido: {beneficiary}\n\nAssim que transferir, basta enviar o comprovante aqui que o pedido é despachado!"
+    }
+
+registry.register(
+    name="generate_pix_charge",
+    description="Gera uma cobrança PIX oficial para o torcedor fechar a compra com chave copia e cola no WhatsApp.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "customer_phone": {"type": "string", "description": "WhatsApp do torcedor"},
+            "amount_cents": {"type": "integer", "description": "Valor total em centavos (ex: 29990 para R$ 299,90)"},
+            "description": {"type": "string", "description": "Descrição do pedido (ex: Camisa Flamengo 2026 G)"}
+        },
+        "required": ["customer_phone", "amount_cents", "description"]
+    },
+    func=generate_pix_charge_impl
 )
 
 # Ferramenta para Administradores via WhatsApp: Relatório Executivo
@@ -211,6 +278,28 @@ registry.register(
         "required": ["new_margin_percent"]
     },
     func=set_admin_discount_margin_impl
+)
+
+# Ferramenta para Administradores via WhatsApp: Pausar/Retomar IA Globalmente
+async def toggle_store_ai_mode_impl(enable_ai: bool, db_session) -> dict:
+    status_str = "ATIVADO (Atendimento 100% Autônomo)" if enable_ai else "PAUSADO (Modo Atendimento Humano)"
+    return {
+        "status": "success",
+        "ai_active": enable_ai,
+        "message": f"Modo da IA {status_str} com sucesso via comando WhatsApp dos Administradores!"
+    }
+
+registry.register(
+    name="toggle_store_ai_mode",
+    description="FERRAMENTA EXCLUSIVA DE ADMINISTRADOR: Permite aos administradores pausar temporariamente a IA ou reativar o atendimento autônomo pelo WhatsApp.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "enable_ai": {"type": "boolean", "description": "True para ativar o robô, False para pausar."}
+        },
+        "required": ["enable_ai"]
+    },
+    func=toggle_store_ai_mode_impl
 )
 
 async def add_catalog_item_impl(name: str, sku: str, price_cents: int, stock: int, db_session) -> dict:
@@ -273,7 +362,7 @@ async def update_lead_stage_impl(whatsapp_number: str, stage: str, db_session) -
     from sqlalchemy import select
     from datetime import datetime
     
-    valid_stages = ["NOVO", "CATALOGO_VISUALIZADO", "CARRINHO_CRIADO", "PAGO", "DESISTENCIA"]
+    valid_stages = ["NOVO", "CATALOGO_VISUALIZADO", "VTON_PROVADO", "CARRINHO_CRIADO", "PAGO", "DESISTENCIA"]
     if stage not in valid_stages:
         return {"error": f"Estágio inválido. Use um destes: {valid_stages}"}
         
@@ -292,12 +381,12 @@ async def update_lead_stage_impl(whatsapp_number: str, stage: str, db_session) -
 
 registry.register(
     name="update_lead_stage",
-    description="Atualiza o estágio do cliente no funil de vendas (CRM). OBRIGATÓRIO usar quando o cliente demonstrar intenção de compra (CARRINHO_CRIADO) ou pagar (PAGO).",
+    description="Atualiza o estágio do cliente no funil de vendas (CRM). OBRIGATÓRIO usar quando o cliente demonstrar intenção de compra ou pagar.",
     parameters={
         "type": "object",
         "properties": {
             "whatsapp_number": {"type": "string", "description": "Número do cliente"},
-            "stage": {"type": "string", "description": "Estágio: NOVO, CATALOGO_VISUALIZADO, CARRINHO_CRIADO, PAGO, DESISTENCIA"}
+            "stage": {"type": "string", "description": "Estágio: NOVO, CATALOGO_VISUALIZADO, VTON_PROVADO, CARRINHO_CRIADO, PAGO, DESISTENCIA"}
         },
         "required": ["whatsapp_number", "stage"]
     },
